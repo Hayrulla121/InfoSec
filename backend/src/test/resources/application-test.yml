@@ -1,0 +1,14 @@
+# Activated by @ActiveProfiles("test") on test classes.
+#
+# Why a *profile* file and not src/test/resources/application.yml:
+# there is only ever ONE classpath:/application.yml, and the test-resources copy
+# would completely SHADOW the main one - every setting you forgot to repeat
+# would silently revert to its default. A profile file is layered on top of the
+# main config instead, so we only state what actually differs.
+spring:
+  datasource:
+    # In-memory: fresh, empty database per test run; never touches ./data/riskdb.
+    url: jdbc:h2:mem:riskdb-test;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1
+  h2:
+    console:
+      enabled: false

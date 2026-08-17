@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(java -version)",
+      "Bash(mvn -version)",
+      "Bash(npm -v)",
+      "Bash(python3 -V)",
+      "Bash(python3 -c \"import openpyxl; print\\('openpyxl', openpyxl.__version__\\)\")",
+      "Bash(/usr/libexec/java_home -V)",
+      "Read(//opt/homebrew/opt/**)",
+      "Bash(python3 -m venv xlvenv)",
+      "Bash(./xlvenv/bin/pip install *)",
+      "Bash(./xlvenv/bin/python -c \"import openpyxl; print\\('ok', openpyxl.__version__\\)\")",
+      "Bash(/opt/homebrew/opt/openjdk@21/bin/java -version)",
+      "Bash(./xlvenv/bin/python -)",
+      "Bash(curl -sS -G https://start.spring.io/starter.zip -d type=maven-project -d language=java -d bootVersion=3.3.5 -d groupId=uz.infosec -d artifactId=risk-platform -d name=risk-platform -d packageName=uz.infosec.risk -d javaVersion=21 -d dependencies=web,data-jpa,security,validation,flyway,h2,postgresql,lombok -o /private/tmp/claude-501/-Users-unknown1-IdeaProjects-InfoSec/dd89fd94-21a5-48bd-883f-87886204b732/scratchpad/starter.zip -w 'HTTP %{http_code} size=%{size_download}\\\\n')",
+      "Bash(curl -sS -H 'Accept: application/json' https://start.spring.io/metadata/client)",
+      "Bash(/usr/bin/python3 -c ' *)",
+      "Bash(curl -sS \"https://search.maven.org/solrsearch/select?q=g:org.springframework.boot+AND+a:spring-boot-starter-parent&core=gav&rows=40&wt=json\")",
+      "Bash(curl -sS https://repo1.maven.org/maven2/org/springframework/boot/spring-boot-starter-parent/maven-metadata.xml)"
+    ]
+  }
+}

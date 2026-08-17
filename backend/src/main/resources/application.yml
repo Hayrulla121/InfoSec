@@ -1,0 +1,61 @@
+spring:
+  application:
+    name: risk-platform
+
+  datasource:
+    # H2 in FILE mode -> data survives restarts (./data/riskdb.mv.db).
+    # MODE=PostgreSQL makes H2 accept PostgreSQL syntax, so the same SQL
+    # migrations will run unchanged against the real PostgreSQL later.
+    # DATABASE_TO_LOWER=TRUE mirrors PostgreSQL's habit of lower-casing
+    # unquoted identifiers.
+    url: jdbc:h2:file:./data/riskdb;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;AUTO_SERVER=TRUE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+
+  jpa:
+    hibernate:
+      # NEVER let Hibernate create tables in this project: Flyway owns the schema.
+      # "validate" = at startup, check every @Entity matches an existing table,
+      # and fail fast if they drifted apart.
+      ddl-auto: validate
+    # Closes the Hibernate session at the end of the service call instead of
+    # keeping it open during JSON rendering. Prevents accidental lazy-loading
+    # queries from the controller layer.
+    open-in-view: false
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+  h2:
+    console:
+      # Browser SQL client at http://localhost:8080/h2-console  (DEV ONLY)
+      enabled: true
+      path: /h2-console
+
+server:
+  port: 8080
+
+app:
+  # Where the React dev server lives; read by CorsConfig.
+  cors:
+    allowed-origins: http://localhost:5173
+
+  jwt:
+    # HMAC-SHA256 signing key, base64-encoded, 384 bits.
+    # Anyone holding this value can mint valid tokens for any user, so in
+    # production it MUST come from the environment, not from this file:
+    #   export APP_JWT_SECRET=$(openssl rand -base64 48)
+    # Spring maps the APP_JWT_SECRET env var onto app.jwt.secret automatically.
+    secret: ${APP_JWT_SECRET:zmRgcFpOGmoeXISArNXC8hU09OD2tPRrk6bv5r9BNhnOj6OHHGx6yH9qu+m51yAQ}
+    # 8 hours - one working day.
+    expiration-minutes: 480
+
+logging:
+  level:
+    org.flywaydb: info
