@@ -29,8 +29,16 @@ public class InfoSystemService {
     }
 
     @Transactional(readOnly = true)
-    public Page<InfoSystemResponse> search(String query, Pageable pageable) {
-        return infoSystemRepository.search(query, pageable).map(InfoSystemService::toDto);
+    public Page<InfoSystemResponse> search(String query, String confidentiality, String integrity,
+                                          String availability, String dataFormat, Pageable pageable) {
+        return infoSystemRepository.search(
+                        query,
+                        Filters.orNull(confidentiality),
+                        Filters.orNull(integrity),
+                        Filters.orNull(availability),
+                        Filters.orNull(dataFormat),
+                        pageable)
+                .map(InfoSystemService::toDto);
     }
 
     @Transactional(readOnly = true)

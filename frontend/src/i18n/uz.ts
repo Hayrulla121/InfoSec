@@ -113,6 +113,13 @@ export const uz: Dictionary = {
     noRisks: 'xavflar yo‘q',
   },
 
+  filter: {
+    all: 'Barchasi',
+    matched: (n: number) => `Topildi: ${n}`,
+    reset: (n: number) => `Filtrlarni tozalash (${n})`,
+    title: 'Ustunlar boʻyicha filtr',
+  },
+
   charts: {
     reductionTitle: 'Nazoratlar hisobiga xavfning kamayishi',
     reductionNote:

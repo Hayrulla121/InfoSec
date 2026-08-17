@@ -4,6 +4,7 @@ import { getOptions } from '../api/dictionaries';
 import { errorMessage } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import { ConfirmDialog, DataTable, Modal, type Column } from '../components/DataTable';
+import { ColumnFilters, useRegistryFilters, type FilterDef } from '../components/ColumnFilters';
 import { IconPlus, IconSearch } from '../components/Icons';
 import { useI18n } from '../i18n/I18nContext';
 
@@ -31,17 +32,22 @@ export default function ControlsPage() {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState<Control | null>(null);
 
+  const { filters, facets, setFilter, resetFilters, refreshFacets } = useRegistryFilters(
+    controlsApi.facets,
+    () => setPageNo(0),
+  );
+
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      setPage(await controlsApi.list({ page: pageNo, search }));
+      setPage(await controlsApi.list({ page: pageNo, search, filters }));
       setError(null);
     } catch (e) {
       setError(errorMessage(e));
     } finally {
       setLoading(false);
     }
-  }, [pageNo, search]);
+  }, [pageNo, search, filters]);
 
   useEffect(() => {
     void load();
@@ -81,6 +87,7 @@ export default function ControlsPage() {
       }
       setShowForm(false);
       await load();
+      refreshFacets();
     } catch (err) {
       setError(errorMessage(err));
     } finally {
@@ -94,11 +101,27 @@ export default function ControlsPage() {
       await controlsApi.remove(deleting.id);
       setDeleting(null);
       await load();
+      refreshFacets();
     } catch (err) {
       setError(errorMessage(err));
       setDeleting(null);
     }
   }
+
+  const filterDefs: FilterDef[] = [
+    { field: 'treatmentMethod', label: t.controls.colMethod, translate: method },
+    // Not a facet: a boolean has exactly two values, so they are fixed here
+    // rather than fetched. Counts are omitted for the same reason.
+    {
+      field: 'implemented',
+      label: t.controls.colImplemented,
+      options: [
+        { value: 'true', count: 0 },
+        { value: 'false', count: 0 },
+      ],
+      translate: (v) => (v === 'true' ? t.controls.yes : t.controls.no),
+    },
+  ];
 
   const columns: Column<Control>[] = [
     { key: 'code', header: t.controls.colId, width: '70px', render: (c) => <strong>{c.code}</strong> },
@@ -161,6 +184,15 @@ export default function ControlsPage() {
           />
           </div>
         </div>
+
+        <ColumnFilters
+          defs={filterDefs}
+          facets={facets}
+          values={filters}
+          onChange={setFilter}
+          onReset={resetFilters}
+          matched={page?.totalElements}
+        />
 
         <DataTable
           page={page}

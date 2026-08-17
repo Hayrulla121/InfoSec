@@ -16,11 +16,20 @@ public interface InfoSystemRepository extends JpaRepository<InfoSystem, Long> {
 
     @Query("""
             select s from InfoSystem s
-            where :q is null or :q = ''
-               or lower(s.code)        like lower(concat('%', :q, '%'))
-               or lower(s.name)        like lower(concat('%', :q, '%'))
-               or lower(s.description) like lower(concat('%', :q, '%'))
-               or lower(s.owner)       like lower(concat('%', :q, '%'))
+            where (:q is null or :q = ''
+                or lower(s.code)        like lower(concat('%', :q, '%'))
+                or lower(s.name)        like lower(concat('%', :q, '%'))
+                or lower(s.description) like lower(concat('%', :q, '%'))
+                or lower(s.owner)       like lower(concat('%', :q, '%')))
+              and (:confidentiality is null or s.confidentiality = :confidentiality)
+              and (:integrity       is null or s.integrity       = :integrity)
+              and (:availability    is null or s.availability    = :availability)
+              and (:dataFormat      is null or s.dataFormat      = :dataFormat)
             """)
-    Page<InfoSystem> search(@Param("q") String query, Pageable pageable);
+    Page<InfoSystem> search(@Param("q") String query,
+                            @Param("confidentiality") String confidentiality,
+                            @Param("integrity") String integrity,
+                            @Param("availability") String availability,
+                            @Param("dataFormat") String dataFormat,
+                            Pageable pageable);
 }

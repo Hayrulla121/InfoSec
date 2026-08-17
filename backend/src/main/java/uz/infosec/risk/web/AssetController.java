@@ -11,8 +11,13 @@ import uz.infosec.risk.domain.Action;
 import uz.infosec.risk.domain.AppModule;
 import uz.infosec.risk.security.RequireModulePermission;
 import uz.infosec.risk.service.AssetService;
+import uz.infosec.risk.service.FacetService;
+import uz.infosec.risk.web.dto.FacetDtos.FacetValue;
 import uz.infosec.risk.web.dto.RegistryDtos.AssetRequest;
 import uz.infosec.risk.web.dto.RegistryDtos.AssetResponse;
+
+import java.util.List;
+import java.util.Map;
 
 /**
  * Реестр ключевых ИА.
@@ -28,17 +33,34 @@ import uz.infosec.risk.web.dto.RegistryDtos.AssetResponse;
 public class AssetController {
 
     private final AssetService assetService;
+    private final FacetService facetService;
 
-    public AssetController(AssetService assetService) {
+    public AssetController(AssetService assetService, FacetService facetService) {
         this.assetService = assetService;
+        this.facetService = facetService;
     }
 
     @GetMapping
     @RequireModulePermission(module = AppModule.ASSETS, action = Action.READ)
     public Page<AssetResponse> list(
             @RequestParam(required = false) String search,
+            @RequestParam(required = false) String infoCategory,
+            @RequestParam(required = false) String criticality,
+            @RequestParam(required = false) String scope,
+            @RequestParam(required = false) String securityClass,
             @PageableDefault(size = 20, sort = "id", direction = Sort.Direction.ASC) Pageable pageable) {
-        return assetService.search(search, pageable);
+        return assetService.search(search, infoCategory, criticality, scope, securityClass, pageable);
+    }
+
+    /**
+     * Filter options for this registry, each with how many rows carry it.
+     * Answers "how many assets hold confidential information" on its own,
+     * before any filter is applied.
+     */
+    @GetMapping("/facets")
+    @RequireModulePermission(module = AppModule.ASSETS, action = Action.READ)
+    public Map<String, List<FacetValue>> facets() {
+        return facetService.facets("assets");
     }
 
     @GetMapping("/{id}")

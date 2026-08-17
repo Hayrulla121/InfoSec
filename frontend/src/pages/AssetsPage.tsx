@@ -4,6 +4,7 @@ import { getOptions } from '../api/dictionaries';
 import { errorMessage } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import { ConfirmDialog, DataTable, LevelBadge, Modal, type Column } from '../components/DataTable';
+import { ColumnFilters, useRegistryFilters, type FilterDef } from '../components/ColumnFilters';
 import { IconPlus, IconSearch } from '../components/Icons';
 import { useI18n } from '../i18n/I18nContext';
 
@@ -29,6 +30,11 @@ export default function AssetsPage() {
   /** Dropdown source: the ASSET_CRITICALITY dictionary, not a hardcoded list. */
   const [criticalityOptions, setCriticalityOptions] = useState<string[]>([]);
 
+  const { filters, facets, setFilter, resetFilters, refreshFacets } = useRegistryFilters(
+    assetsApi.facets,
+    () => setPageNo(0),
+  );
+
   const [editing, setEditing] = useState<Asset | null>(null);
   const [form, setForm] = useState<AssetRequest>(EMPTY);
   const [showForm, setShowForm] = useState(false);
@@ -38,14 +44,14 @@ export default function AssetsPage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      setPage(await assetsApi.list({ page: pageNo, search }));
+      setPage(await assetsApi.list({ page: pageNo, search, filters }));
       setError(null);
     } catch (e) {
       setError(errorMessage(e));
     } finally {
       setLoading(false);
     }
-  }, [pageNo, search]);
+  }, [pageNo, search, filters]);
 
   useEffect(() => {
     void load();
@@ -86,6 +92,7 @@ export default function AssetsPage() {
       }
       setShowForm(false);
       await load();
+      refreshFacets();
     } catch (err) {
       setError(errorMessage(err));
     } finally {
@@ -99,11 +106,29 @@ export default function AssetsPage() {
       await assetsApi.remove(deleting.id);
       setDeleting(null);
       await load();
+      refreshFacets();
     } catch (err) {
       setError(errorMessage(err));
       setDeleting(null);
     }
   }
+
+  /**
+   * Filterable columns. The `field` must match both the server's query
+   * parameter and its facet key — they are the same name by design, so there
+   * is no mapping table to keep in sync.
+   *
+   * `criticality` is stored in Russian (it comes from the dictionary), so it
+   * gets a translator: the dropdown READS in the chosen language while still
+   * SENDING the stored value. The other three are free text typed by users and
+   * are shown exactly as entered.
+   */
+  const filterDefs: FilterDef[] = [
+    { field: 'infoCategory', label: t.assets.colCategory },
+    { field: 'criticality', label: t.assets.colCriticality, translate: criticality },
+    { field: 'scope', label: t.assets.colScope },
+    { field: 'securityClass', label: t.assets.colSecurityClass },
+  ];
 
   const columns: Column<Asset>[] = [
     { key: 'code', header: t.assets.colId, width: '80px', render: (a) => <strong>{a.code}</strong> },
@@ -153,6 +178,15 @@ export default function AssetsPage() {
           />
           </div>
         </div>
+
+        <ColumnFilters
+          defs={filterDefs}
+          facets={facets}
+          values={filters}
+          onChange={setFilter}
+          onReset={resetFilters}
+          matched={page?.totalElements}
+        />
 
         <DataTable
           page={page}

@@ -14,6 +14,31 @@ export interface PageQuery {
   size?: number;
   sort?: string;
   search?: string;
+  /** Column filters: query-parameter name -> chosen value. Blanks are dropped. */
+  filters?: Filters;
+}
+
+/** Column filter selections. An empty string means "no filter on this column". */
+export type Filters = Record<string, string>;
+
+/** One option of a column-filter dropdown. */
+export interface FacetValue {
+  value: string;
+  count: number;
+}
+
+/** Field name -> its selectable values, most frequent first. */
+export type Facets = Record<string, FacetValue[]>;
+
+/** Strips cleared selections so they are never sent as empty parameters. */
+export function activeFilters(filters?: Filters): Filters {
+  if (!filters) return {};
+  return Object.fromEntries(Object.entries(filters).filter(([, v]) => v !== ''));
+}
+
+/** How many filters are currently applied - drives the "reset" affordance. */
+export function activeFilterCount(filters?: Filters): number {
+  return Object.keys(activeFilters(filters)).length;
 }
 
 export interface Asset {
@@ -81,8 +106,18 @@ function crud<TResponse, TRequest>(basePath: string) {
           sort: query.sort,
           // Omit an empty search rather than sending search=""
           search: query.search || undefined,
+          // Column filters are spread in as ordinary params. Cleared ones are
+          // dropped here rather than sent empty - axios omits undefined, and
+          // the server treats a blank value as "no filter" as well, so a
+          // cleared dropdown can never blank out the table.
+          ...activeFilters(query.filters),
         },
       });
+      return data;
+    },
+    /** Distinct values per filterable column, with row counts. */
+    async facets(): Promise<Facets> {
+      const { data } = await api.get<Facets>(`${basePath}/facets`);
       return data;
     },
     async get(id: number): Promise<TResponse> {

@@ -319,4 +319,119 @@ class RegistryTest {
                                  "exploitability":1,"affectedUsers":1,"damage":1}"""))
                 .andExpect(status().isForbidden());
     }
+
+    // ------------------------------------------------- column filters
+
+    /**
+     * The task this was built for: "how many assets hold confidential
+     * information". The facet answers it without filtering; the filter then
+     * narrows the table to exactly those rows.
+     */
+    @Test
+    void facetCountsMatchWhatTheFilterActuallyReturns() throws Exception {
+        String tag = "Konfidensial-" + System.nanoTime();
+        createEntity("/api/assets", """
+                {"name":"Filter asset A","criticality":"Высокая","infoCategory":"%s"}"""
+                .formatted(tag));
+        createEntity("/api/assets", """
+                {"name":"Filter asset B","criticality":"Средняя","infoCategory":"%s"}"""
+                .formatted(tag));
+        createEntity("/api/assets", """
+                {"name":"Filter asset C","criticality":"Средняя","infoCategory":"Ochiq-%d"}"""
+                .formatted(System.nanoTime()));
+
+        // The dropdown option reports 2 ...
+        JsonNode facets = fetchJson("/api/assets/facets");
+        long facetCount = -1;
+        for (JsonNode option : facets.get("infoCategory")) {
+            if (tag.equals(option.get("value").asText())) {
+                facetCount = option.get("count").asLong();
+            }
+        }
+        assertThat(facetCount).as("facet option for %s", tag).isEqualTo(2);
+
+        // ... and filtering by it returns exactly that many rows.
+        JsonNode filtered = fetchJson("/api/assets?infoCategory=" + tag);
+        assertThat(filtered.get("totalElements").asLong()).isEqualTo(facetCount);
+        for (JsonNode row : filtered.get("content")) {
+            assertThat(row.get("infoCategory").asText()).isEqualTo(tag);
+        }
+    }
+
+    /** Two filters narrow together, they do not widen. */
+    @Test
+    void filtersCombineWithAnd() throws Exception {
+        String tag = "Combine-" + System.nanoTime();
+        createEntity("/api/assets", """
+                {"name":"Combine A","criticality":"Высокая","infoCategory":"%s"}""".formatted(tag));
+        createEntity("/api/assets", """
+                {"name":"Combine B","criticality":"Низкая","infoCategory":"%s"}""".formatted(tag));
+
+        assertThat(fetchJson("/api/assets?infoCategory=" + tag).get("totalElements").asInt())
+                .isEqualTo(2);
+        assertThat(fetchJson("/api/assets?infoCategory=" + tag + "&criticality=Высокая")
+                .get("totalElements").asInt())
+                .isEqualTo(1);
+    }
+
+    /**
+     * A cleared dropdown sends {@code ?infoCategory=}. If the blank were taken
+     * literally the query would look for rows whose column equals "" and the
+     * table would go blank - which is what a user sees as "the filter broke".
+     */
+    @Test
+    void blankFilterParameterMeansNoFilter() throws Exception {
+        int all = fetchJson("/api/assets").get("totalElements").asInt();
+
+        // .param() rather than a literal "?infoCategory=%20": MockMvc does not
+        // percent-decode a raw query string, so the assertion would be testing
+        // MockMvc's URI handling instead of the server's blank handling.
+        assertThat(filtered("infoCategory", "").get("totalElements").asInt())
+                .as("empty value")
+                .isEqualTo(all);
+        assertThat(filtered("infoCategory", "   ").get("totalElements").asInt())
+                .as("whitespace-only is blank too")
+                .isEqualTo(all);
+    }
+
+    private JsonNode filtered(String param, String value) throws Exception {
+        return json.readTree(mvc.perform(get("/api/assets")
+                        .header("Authorization", "Bearer " + admin)
+                        .param(param, value))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString());
+    }
+
+    /** Free-text search and a column filter narrow together. */
+    @Test
+    void searchAndFilterApplyTogether() throws Exception {
+        String tag = "Together-" + System.nanoTime();
+        createEntity("/api/assets", """
+                {"name":"Together findme","criticality":"Средняя","infoCategory":"%s"}""".formatted(tag));
+        createEntity("/api/assets", """
+                {"name":"Together other","criticality":"Средняя","infoCategory":"%s"}""".formatted(tag));
+
+        assertThat(fetchJson("/api/assets?infoCategory=" + tag + "&search=findme")
+                .get("totalElements").asInt())
+                .isEqualTo(1);
+    }
+
+    /** Every registry exposes facets, and only to callers with READ on it. */
+    @Test
+    void facetsExistForEveryRegistryAndRespectPermissions() throws Exception {
+        for (String url : java.util.List.of(
+                "/api/assets/facets", "/api/threats/facets", "/api/controls/facets",
+                "/api/risks/facets", "/api/info-systems/facets")) {
+            assertThat(fetchJson(url)).as(url).isNotNull();
+        }
+
+        // No token at all -> rejected, same as every other registry read.
+        mvc.perform(get("/api/assets/facets")).andExpect(status().isUnauthorized());
+    }
+
+    private JsonNode fetchJson(String url) throws Exception {
+        return json.readTree(mvc.perform(get(url).header("Authorization", "Bearer " + admin))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString());
+    }
 }

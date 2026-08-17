@@ -36,8 +36,16 @@ public class AssetService {
     }
 
     @Transactional(readOnly = true)
-    public Page<AssetResponse> search(String query, Pageable pageable) {
-        return assetRepository.search(query, pageable).map(AssetService::toDto);
+    public Page<AssetResponse> search(String query, String infoCategory, String criticality,
+                                      String scope, String securityClass, Pageable pageable) {
+        return assetRepository.search(
+                        query,
+                        Filters.orNull(infoCategory),
+                        Filters.orNull(criticality),
+                        Filters.orNull(scope),
+                        Filters.orNull(securityClass),
+                        pageable)
+                .map(AssetService::toDto);
     }
 
     @Transactional(readOnly = true)

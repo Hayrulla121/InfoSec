@@ -16,10 +16,13 @@ public interface ThreatRepository extends JpaRepository<Threat, Long> {
 
     @Query("""
             select t from Threat t
-            where :q is null or :q = ''
-               or lower(t.code)        like lower(concat('%', :q, '%'))
-               or lower(t.description) like lower(concat('%', :q, '%'))
-               or lower(t.levelLabel)  like lower(concat('%', :q, '%'))
+            where (:q is null or :q = ''
+                or lower(t.code)        like lower(concat('%', :q, '%'))
+                or lower(t.description) like lower(concat('%', :q, '%'))
+                or lower(t.levelLabel)  like lower(concat('%', :q, '%')))
+              and (:levelLabel is null or t.levelLabel = :levelLabel)
             """)
-    Page<Threat> search(@Param("q") String query, Pageable pageable);
+    Page<Threat> search(@Param("q") String query,
+                        @Param("levelLabel") String levelLabel,
+                        Pageable pageable);
 }

@@ -121,6 +121,13 @@ export const ru = {
     noRisks: 'нет рисков',
   },
 
+  filter: {
+    all: 'Все',
+    matched: (n: number) => `Найдено: ${n}`,
+    reset: (n: number) => `Сбросить фильтры (${n})`,
+    title: 'Фильтры по столбцам',
+  },
+
   charts: {
     reductionTitle: 'Снижение риска за счёт контролей',
     reductionNote:

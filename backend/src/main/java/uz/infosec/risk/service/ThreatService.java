@@ -33,8 +33,9 @@ public class ThreatService {
     }
 
     @Transactional(readOnly = true)
-    public Page<ThreatResponse> search(String query, Pageable pageable) {
-        return threatRepository.search(query, pageable).map(ThreatService::toDto);
+    public Page<ThreatResponse> search(String query, String levelLabel, Pageable pageable) {
+        return threatRepository.search(query, Filters.orNull(levelLabel), pageable)
+                .map(ThreatService::toDto);
     }
 
     @Transactional(readOnly = true)

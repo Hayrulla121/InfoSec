@@ -10,10 +10,15 @@ import org.springframework.web.bind.annotation.*;
 import uz.infosec.risk.domain.Action;
 import uz.infosec.risk.domain.AppModule;
 import uz.infosec.risk.security.RequireModulePermission;
+import uz.infosec.risk.service.FacetService;
+import uz.infosec.risk.web.dto.FacetDtos.FacetValue;
 import uz.infosec.risk.service.RiskService;
 import uz.infosec.risk.web.dto.RiskDtos.*;
 
 import java.util.List;
+
+import java.util.List;
+import java.util.Map;
 
 /** Реестр рисков + attaching controls. */
 @RestController
@@ -21,9 +26,11 @@ import java.util.List;
 public class RiskController {
 
     private final RiskService riskService;
+    private final FacetService facetService;
 
-    public RiskController(RiskService riskService) {
+    public RiskController(RiskService riskService, FacetService facetService) {
         this.riskService = riskService;
+        this.facetService = facetService;
     }
 
     /**
@@ -36,9 +43,22 @@ public class RiskController {
             @RequestParam(required = false) String search,
             @RequestParam(required = false) Integer assetRating,
             @RequestParam(required = false) Integer threatRating,
+            @RequestParam(required = false) String treatmentMethod,
+            @RequestParam(required = false) String measureStatus,
+            @RequestParam(required = false) String currentRiskLabel,
+            @RequestParam(required = false) String residualRiskLabel,
             @PageableDefault(size = 20, sort = "id", direction = Sort.Direction.ASC) Pageable pageable) {
-        return riskService.search(search, assetRating, threatRating, pageable);
+        return riskService.search(search, assetRating, threatRating,
+                treatmentMethod, measureStatus, currentRiskLabel, residualRiskLabel, pageable);
     }
+
+    /** Filter options for this registry, each with how many rows carry it. */
+    @GetMapping("/facets")
+    @RequireModulePermission(module = AppModule.RISKS, action = Action.READ)
+    public Map<String, List<FacetValue>> facets() {
+        return facetService.facets("risks");
+    }
+
 
     @GetMapping("/{id}")
     @RequireModulePermission(module = AppModule.RISKS, action = Action.READ)

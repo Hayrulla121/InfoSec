@@ -4,6 +4,7 @@ import type { Page } from '../api/registries';
 import { errorMessage } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import { ConfirmDialog, DataTable, Modal, type Column } from '../components/DataTable';
+import { ColumnFilters, useRegistryFilters, type FilterDef } from '../components/ColumnFilters';
 import { IconPlus, IconSearch } from '../components/Icons';
 import { useI18n } from '../i18n/I18nContext';
 
@@ -47,17 +48,22 @@ export default function InfoSystemsPage() {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState<InfoSystem | null>(null);
 
+  const { filters, facets, setFilter, resetFilters, refreshFacets } = useRegistryFilters(
+    infoSystemsApi.facets,
+    () => setPageNo(0),
+  );
+
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      setPage(await infoSystemsApi.list({ page: pageNo, search }));
+      setPage(await infoSystemsApi.list({ page: pageNo, search, filters }));
       setError(null);
     } catch (e) {
       setError(errorMessage(e));
     } finally {
       setLoading(false);
     }
-  }, [pageNo, search]);
+  }, [pageNo, search, filters]);
 
   useEffect(() => {
     void load();
@@ -99,6 +105,7 @@ export default function InfoSystemsPage() {
       }
       setShowForm(false);
       await load();
+      refreshFacets();
     } catch (err) {
       setError(errorMessage(err));
     } finally {
@@ -112,6 +119,7 @@ export default function InfoSystemsPage() {
       await infoSystemsApi.remove(deleting.id);
       setDeleting(null);
       await load();
+      refreshFacets();
     } catch (err) {
       // A 409 here means assets still point at this system; the message from
       // the server says so, in the user's language.
@@ -119,6 +127,13 @@ export default function InfoSystemsPage() {
       setDeleting(null);
     }
   }
+
+  const filterDefs: FilterDef[] = [
+    { field: 'confidentiality', label: t.infoSystems.colConfidentiality },
+    { field: 'integrity', label: t.infoSystems.colIntegrity },
+    { field: 'availability', label: t.infoSystems.colAvailability },
+    { field: 'dataFormat', label: t.infoSystems.colFormat },
+  ];
 
   const columns: Column<InfoSystem>[] = [
     { key: 'code', header: t.infoSystems.colId, width: '80px', render: (s) => <strong>{s.code}</strong> },
@@ -171,6 +186,15 @@ export default function InfoSystemsPage() {
             />
           </div>
         </div>
+
+        <ColumnFilters
+          defs={filterDefs}
+          facets={facets}
+          values={filters}
+          onChange={setFilter}
+          onReset={resetFilters}
+          matched={page?.totalElements}
+        />
 
         <DataTable
           page={page}

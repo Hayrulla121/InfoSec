@@ -29,8 +29,10 @@ public class ControlService {
     }
 
     @Transactional(readOnly = true)
-    public Page<ControlResponse> search(String query, Pageable pageable) {
-        return controlRepository.search(query, pageable).map(ControlService::toDto);
+    public Page<ControlResponse> search(String query, String treatmentMethod,
+                                       Boolean implemented, Pageable pageable) {
+        return controlRepository.search(query, Filters.orNull(treatmentMethod), implemented, pageable)
+                .map(ControlService::toDto);
     }
 
     @Transactional(readOnly = true)

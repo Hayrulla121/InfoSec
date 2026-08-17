@@ -1,4 +1,5 @@
 import { api } from './client';
+import { activeFilters, type Facets, type Filters } from './registries';
 import type { Page } from './registries';
 
 export type ControlType = 'IMPLEMENTED' | 'PLANNED';
@@ -69,6 +70,8 @@ export interface RiskQuery {
   /** Set by the risk-matrix drill-down. */
   assetRating?: number;
   threatRating?: number;
+  /** Column filters, spread in as ordinary query parameters. */
+  filters?: Filters;
 }
 
 export const risksApi = {
@@ -80,8 +83,13 @@ export const risksApi = {
         search: query.search || undefined,
         assetRating: query.assetRating,
         threatRating: query.threatRating,
+        ...activeFilters(query.filters),
       },
     });
+    return data;
+  },
+  async facets(): Promise<Facets> {
+    const { data } = await api.get<Facets>('/api/risks/facets');
     return data;
   },
   async get(id: number): Promise<Risk> {

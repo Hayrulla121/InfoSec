@@ -1984,3 +1984,98 @@ input[type='checkbox'] {
     transition: none;
   }
 }
+
+/* ========================================================= column filters
+   Sits between the search box and the table. Each dropdown carries the row
+   count per value, so the options themselves answer "how many of these are
+   there" before anything is applied. */
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px 16px;
+  padding: 0 18px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.filter-bar:empty {
+  display: none;
+}
+
+.filter-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.filter-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.filter-select {
+  min-width: 160px;
+  max-width: 260px;
+  padding: 7px 10px;
+  font-size: 0.87rem;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  background: var(--panel);
+  color: var(--text);
+}
+
+.filter-select:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* An applied filter is tinted, so it is obvious at a glance which columns are
+   narrowing the table - otherwise a stray selection silently hides rows. */
+.filter-select.filter-active {
+  border-color: var(--accent-border);
+  background: var(--accent-soft);
+  color: var(--accent-hover);
+  font-weight: 600;
+}
+
+.filter-summary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: auto;
+  padding-bottom: 1px;
+  font-size: 0.87rem;
+}
+
+.filter-reset {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 11px;
+  font-size: 0.83rem;
+  color: var(--muted);
+  background: var(--n-100);
+  border: 1px solid var(--border);
+  border-radius: var(--r-pill);
+  cursor: pointer;
+}
+
+.filter-reset:hover {
+  background: var(--danger-soft);
+  border-color: var(--danger-border);
+  color: var(--danger);
+}
+
+@media (max-width: 760px) {
+  .filter-summary {
+    margin-left: 0;
+    width: 100%;
+  }
+  .filter-select {
+    min-width: 140px;
+  }
+}

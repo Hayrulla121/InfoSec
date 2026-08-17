@@ -39,8 +39,16 @@ public class RiskService {
 
     @Transactional(readOnly = true)
     public Page<RiskResponse> search(String query, Integer assetRating, Integer threatRating,
+                                     String treatmentMethod, String measureStatus,
+                                     String currentRiskLabel, String residualRiskLabel,
                                      Pageable pageable) {
-        return riskRepository.search(query, assetRating, threatRating, pageable)
+        return riskRepository.search(
+                        query, assetRating, threatRating,
+                        Filters.orNull(treatmentMethod),
+                        Filters.orNull(measureStatus),
+                        Filters.orNull(currentRiskLabel),
+                        Filters.orNull(residualRiskLabel),
+                        pageable)
                 .map(RiskService::toDto);
     }
 

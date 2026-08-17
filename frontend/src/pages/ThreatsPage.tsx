@@ -3,6 +3,7 @@ import { threatsApi, type Page, type Threat, type ThreatRequest } from '../api/r
 import { errorMessage } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import { ConfirmDialog, DataTable, LevelBadge, Modal, type Column } from '../components/DataTable';
+import { ColumnFilters, useRegistryFilters, type FilterDef } from '../components/ColumnFilters';
 import { IconPlus, IconSearch } from '../components/Icons';
 import { useI18n } from '../i18n/I18nContext';
 
@@ -49,17 +50,22 @@ export default function ThreatsPage() {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState<Threat | null>(null);
 
+  const { filters, facets, setFilter, resetFilters, refreshFacets } = useRegistryFilters(
+    threatsApi.facets,
+    () => setPageNo(0),
+  );
+
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      setPage(await threatsApi.list({ page: pageNo, search }));
+      setPage(await threatsApi.list({ page: pageNo, search, filters }));
       setError(null);
     } catch (e) {
       setError(errorMessage(e));
     } finally {
       setLoading(false);
     }
-  }, [pageNo, search]);
+  }, [pageNo, search, filters]);
 
   useEffect(() => {
     void load();
@@ -109,6 +115,7 @@ export default function ThreatsPage() {
       }
       setShowForm(false);
       await load();
+      refreshFacets();
     } catch (err) {
       setError(errorMessage(err));
     } finally {
@@ -122,11 +129,16 @@ export default function ThreatsPage() {
       await threatsApi.remove(deleting.id);
       setDeleting(null);
       await load();
+      refreshFacets();
     } catch (err) {
       setError(errorMessage(err));
       setDeleting(null);
     }
   }
+
+  const filterDefs: FilterDef[] = [
+    { field: 'levelLabel', label: t.threats.colLevel, translate: level },
+  ];
 
   const columns: Column<Threat>[] = [
     { key: 'code', header: t.threats.colCode, width: '70px', render: (row) => <strong>{row.code}</strong> },
@@ -182,6 +194,15 @@ export default function ThreatsPage() {
           />
           </div>
         </div>
+
+        <ColumnFilters
+          defs={filterDefs}
+          facets={facets}
+          values={filters}
+          onChange={setFilter}
+          onReset={resetFilters}
+          matched={page?.totalElements}
+        />
 
         <DataTable
           page={page}

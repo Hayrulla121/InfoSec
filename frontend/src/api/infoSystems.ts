@@ -1,5 +1,5 @@
 import { api } from './client';
-import type { Page, PageQuery } from './registries';
+import { activeFilters, type Facets, type Page, type PageQuery } from './registries';
 
 export interface InfoSystem {
   id: number;
@@ -42,8 +42,13 @@ export const infoSystemsApi = {
         page: query.page ?? 0,
         size: query.size ?? 20,
         search: query.search || undefined,
+        ...activeFilters(query.filters),
       },
     });
+    return data;
+  },
+  async facets(): Promise<Facets> {
+    const { data } = await api.get<Facets>('/api/info-systems/facets');
     return data;
   },
   async create(body: InfoSystemRequest): Promise<InfoSystem> {

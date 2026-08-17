@@ -38,6 +38,10 @@ public interface RiskRepository extends JpaRepository<Risk, Long> {
                 or lower(t.description)   like lower(concat('%', :q, '%')))
               and (:assetRating is null or a.criticalityRating = :assetRating)
               and (:threatRating is null or r.currentThreatRating = :threatRating)
+              and (:treatmentMethod is null or r.treatmentMethod = :treatmentMethod)
+              and (:measureStatus is null or r.measureStatus = :measureStatus)
+              and (:currentRiskLabel is null or r.currentRiskLabel = :currentRiskLabel)
+              and (:residualRiskLabel is null or r.residualRiskLabel = :residualRiskLabel)
             """,
             countQuery = """
             select count(r) from Risk r
@@ -51,10 +55,18 @@ public interface RiskRepository extends JpaRepository<Risk, Long> {
                 or lower(t.description)   like lower(concat('%', :q, '%')))
               and (:assetRating is null or a.criticalityRating = :assetRating)
               and (:threatRating is null or r.currentThreatRating = :threatRating)
+              and (:treatmentMethod is null or r.treatmentMethod = :treatmentMethod)
+              and (:measureStatus is null or r.measureStatus = :measureStatus)
+              and (:currentRiskLabel is null or r.currentRiskLabel = :currentRiskLabel)
+              and (:residualRiskLabel is null or r.residualRiskLabel = :residualRiskLabel)
             """)
     Page<Risk> search(@Param("q") String query,
                       @Param("assetRating") Integer assetRating,
                       @Param("threatRating") Integer threatRating,
+                      @Param("treatmentMethod") String treatmentMethod,
+                      @Param("measureStatus") String measureStatus,
+                      @Param("currentRiskLabel") String currentRiskLabel,
+                      @Param("residualRiskLabel") String residualRiskLabel,
                       Pageable pageable);
 
     // ---- recalculation fan-out: which risks does this change affect? ----
