@@ -1,9 +1,11 @@
-import { useState, type FormEvent } from 'react';
+import { useRef, useState, type FormEvent } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { errorMessage } from '../api/client';
 import { IconAlert, IconShield } from '../components/Icons';
 import { ParticleNetwork } from '../components/ParticleNetwork';
+import { RadarField } from '../components/RadarField';
+import { TerminalTitle } from '../components/TerminalTitle';
 import { useI18n } from '../i18n/I18nContext';
 import { LanguageSwitcher } from '../components/LanguageSwitcher';
 
@@ -17,6 +19,10 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  // The scope centres itself in whatever space is left beside the card, so it
+  // needs to be able to measure it.
+  const cardRef = useRef<HTMLFormElement | null>(null);
 
   // Where ProtectedRoute wanted to send them before the login interruption.
   const from = (location.state as { from?: string } | null)?.from ?? '/';
@@ -38,15 +44,21 @@ export default function LoginPage() {
 
   return (
     <div className="login-shell">
-      <ParticleNetwork />
-      <form className="login-card" onSubmit={onSubmit}>
+      {/* Two backdrops, stacked and deliberately disjoint: the constellation
+          fills the field and reacts to the pointer, and keeps out of the circle
+          the scope occupies so the two never tangle. */}
+      <ParticleNetwork avoidRef={cardRef} />
+      <RadarField cardRef={cardRef} statusLabel={t.login.radarStatus} />
+
+      <form className="login-card" ref={cardRef} onSubmit={onSubmit}>
         <div className="login-brand">
-          <span className="brand-mark" aria-hidden="true">
-            <IconShield size={20} />
+          <span className="login-badge" aria-hidden="true">
+            <IconShield size={22} />
           </span>
-          <h1>{t.brand.fullTitle}</h1>
+          <TerminalTitle text={t.brand.fullTitle} />
         </div>
-        <p className="muted">{t.login.prompt}</p>
+
+        <p className="login-sub">{t.login.prompt}</p>
 
         <div className="field">
           <label htmlFor="username">{t.login.username}</label>

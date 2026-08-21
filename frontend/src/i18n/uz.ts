@@ -17,7 +17,7 @@ export const uz: Dictionary = {
   brand: {
     title: 'Xavflarni baholash',
     subtitle: 'AT va AX',
-    fullTitle: 'AT va AX xavflarini sifat jihatidan baholash',
+    fullTitle: 'AT VA AX RISKLARINI AVTOMATLASHTIRILGAN BOSHQARISH TIZIMI',
   },
 
   login: {
@@ -28,6 +28,10 @@ export const uz: Dictionary = {
     submitting: 'Kirilmoqda…',
     failed: 'Tizimga kirib bo‘lmadi',
     footer: 'Axborot xavfsizligi · ichki tizim',
+    // HUD text on the radar backdrop. Localised rather than left as
+    // English chrome: a Russian screen with an English word on it is
+    // exactly the mixed-language problem the switch exists to remove.
+    radarStatus: 'SKANERLASH',
   },
 
   nav: {

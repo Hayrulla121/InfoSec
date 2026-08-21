@@ -21,7 +21,8 @@ export const ru = {
   brand: {
     title: 'Оценка рисков',
     subtitle: 'ИТ и ИБ',
-    fullTitle: 'Качественная оценка рисков ИТ и ИБ',
+    // The system's formal name, shown on the login screen.
+    fullTitle: 'Автоматизированная система управления рисками ИТ и ИБ',
   },
 
   login: {
@@ -32,6 +33,10 @@ export const ru = {
     submitting: 'Вход…',
     failed: 'Не удалось войти',
     footer: 'Информационная безопасность · внутренняя система',
+    // HUD text on the radar backdrop. Localised rather than left as
+    // English chrome: a Russian screen with an English word on it is
+    // exactly the mixed-language problem the switch exists to remove.
+    radarStatus: 'СКАНИРОВАНИЕ',
   },
 
   nav: {

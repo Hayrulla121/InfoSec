@@ -1,4 +1,5 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, type RefObject } from 'react';
+import { scopeGeometry, type Scope } from './scopeGeometry';
 
 /**
  * Decorative "constellation" backdrop for the login screen: drifting points
@@ -12,6 +13,12 @@ import { useEffect, useRef } from 'react';
  * Colours are read from the theme tokens once at setup, so the network is the
  * same ink and the same signal red as the rest of the interface rather than
  * carrying its own palette.
+ *
+ * <b>It keeps out of the radar scope.</b> Two overlapping decorative systems
+ * read as noise, not as depth - the constellation's links would cross the
+ * bezel and tangle with the sweep. Given the card to measure against, the
+ * field fades to nothing as it approaches the scope and suppresses any link
+ * with an endpoint inside, leaving the instrument a clean field of its own.
  */
 
 /** One point roughly per this many square pixels, so density feels even. */
@@ -25,6 +32,11 @@ const MAX_POINTS = 180;
 const LINK_DISTANCE = 118;
 /** Points within this of the cursor join to it, in accent red. */
 const CURSOR_DISTANCE = 175;
+
+/** Clear of the bezel ticks and corner arcs, which reach radius + 24. */
+const KEEP_OUT_MARGIN = 34;
+/** Particles fade across this band rather than vanishing at a hard edge. */
+const KEEP_OUT_FADE = 70;
 
 /** How far the whole field leans toward the cursor, as a fraction of offset. */
 const PARALLAX = 0.028;
@@ -47,8 +59,18 @@ function rgb(hex: string, fallback: [number, number, number]): [number, number, 
   return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
 }
 
-export function ParticleNetwork() {
+export function ParticleNetwork({
+  avoidRef,
+}: {
+  /**
+   * The login card. Used only to locate the radar scope, via the same helper
+   * the radar itself uses, so the keep-out lands exactly on the instrument.
+   * Omit it and the field covers the whole canvas.
+   */
+  avoidRef?: RefObject<HTMLElement | null>;
+} = {}) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const avoid = avoidRef;
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -70,6 +92,22 @@ export function ParticleNetwork() {
     let height = 0;
     let points: Point[] = [];
     let frame = 0;
+    let scope: Scope | null = null;
+
+    /**
+     * 0 inside the scope, 1 well outside it, easing across the fade band.
+     * Applied to dots AND to link opacity, so nothing crosses the bezel.
+     */
+    function visibility(x: number, y: number): number {
+      if (!scope) return 1;
+      const d = Math.hypot(x - scope.cx, y - scope.cy);
+      const inner = scope.radius + KEEP_OUT_MARGIN;
+      if (d <= inner) return 0;
+      if (d >= inner + KEEP_OUT_FADE) return 1;
+      const t = (d - inner) / KEEP_OUT_FADE;
+      // Smoothstep: no visible seam where the band starts and ends.
+      return t * t * (3 - 2 * t);
+    }
 
     // Where the cursor is, and where the field has eased to so far.
     const cursor = { x: -9999, y: -9999, active: false };
@@ -99,6 +137,7 @@ export function ParticleNetwork() {
       canvas!.width = Math.round(width * dpr);
       canvas!.height = Math.round(height * dpr);
       ctx!.setTransform(dpr, 0, 0, dpr, 0, 0);
+      scope = avoid ? scopeGeometry(canvas!, avoid.current, width, height) : null;
       seed();
     }
 
@@ -130,6 +169,8 @@ export function ParticleNetwork() {
         const a = points[i];
         const ax = a.x + lean.x;
         const ay = a.y + lean.y;
+        const av = visibility(ax, ay);
+        if (av <= 0) continue;
 
         for (let j = i + 1; j < points.length; j++) {
           const b = points[j];
@@ -139,7 +180,11 @@ export function ParticleNetwork() {
           const dy = ay - by;
           const dist = Math.hypot(dx, dy);
           if (dist > LINK_DISTANCE) continue;
-          ctx!.strokeStyle = `rgba(${inkRgb}, ${0.16 * (1 - dist / LINK_DISTANCE)})`;
+          // The dimmer end governs: a link is only as visible as its faintest
+          // endpoint, so no line reaches into the scope from outside it.
+          const v = Math.min(av, visibility(bx, by));
+          if (v <= 0) continue;
+          ctx!.strokeStyle = `rgba(${inkRgb}, ${0.16 * (1 - dist / LINK_DISTANCE) * v})`;
           ctx!.lineWidth = 1;
           ctx!.beginPath();
           ctx!.moveTo(ax, ay);
@@ -150,7 +195,7 @@ export function ParticleNetwork() {
         if (cursor.active) {
           const dist = Math.hypot(ax - cursor.x, ay - cursor.y);
           if (dist < CURSOR_DISTANCE) {
-            const strength = 1 - dist / CURSOR_DISTANCE;
+            const strength = (1 - dist / CURSOR_DISTANCE) * av;
             ctx!.strokeStyle = `rgba(${accentRgb}, ${0.5 * strength})`;
             ctx!.lineWidth = 1.1;
             ctx!.beginPath();
@@ -164,6 +209,8 @@ export function ParticleNetwork() {
       for (const p of points) {
         const px = p.x + lean.x;
         const py = p.y + lean.y;
+        const vis = visibility(px, py);
+        if (vis <= 0) continue;
         const near = cursor.active
           ? Math.max(0, 1 - Math.hypot(px - cursor.x, py - cursor.y) / CURSOR_DISTANCE)
           : 0;
@@ -171,8 +218,8 @@ export function ParticleNetwork() {
         // is touching the network rather than floating over it.
         ctx!.fillStyle =
           near > 0
-            ? `rgba(${accentRgb}, ${0.35 + 0.5 * near})`
-            : `rgba(${inkRgb}, 0.34)`;
+            ? `rgba(${accentRgb}, ${(0.35 + 0.5 * near) * vis})`
+            : `rgba(${inkRgb}, ${0.34 * vis})`;
         ctx!.beginPath();
         ctx!.arc(px, py, p.r + near * 1.1, 0, Math.PI * 2);
         ctx!.fill();
