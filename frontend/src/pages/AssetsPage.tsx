@@ -6,6 +6,8 @@ import { useAuth } from '../auth/AuthContext';
 import { ConfirmDialog, DataTable, LevelBadge, Modal, type Column } from '../components/DataTable';
 import { ColumnFilters, useRegistryFilters, type FilterDef } from '../components/ColumnFilters';
 import { IconPlus, IconSearch } from '../components/Icons';
+import { FormulaHint } from '../components/Formula';
+import { assetRatingFormula } from '../content/formulas';
 import { useI18n } from '../i18n/I18nContext';
 
 const EMPTY: AssetRequest = {
@@ -140,7 +142,15 @@ export default function AssetsPage() {
       key: 'rating',
       header: t.assets.colRating,
       width: '90px',
-      render: (a) => <LevelBadge level={a.criticalityRating} title={a.criticality} />,
+      render: (a) => (
+        <span className="cell-formula">
+          <LevelBadge level={a.criticalityRating} title={a.criticality} />
+          <FormulaHint
+            spec={assetRatingFormula(t.formula, criticality, a)}
+            label={t.formula.ariaLabel(`${a.code} · ${t.formula.assetRatingTitle}`)}
+          />
+        </span>
+      ),
     },
     { key: 'class', header: t.assets.colSecurityClass, width: '100px', render: (a) => a.securityClass ?? t.common.none },
   ];

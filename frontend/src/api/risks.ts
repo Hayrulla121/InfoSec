@@ -7,6 +7,8 @@ export type ControlType = 'IMPLEMENTED' | 'PLANNED';
 export interface RiskStage {
   score: number | null;
   threatRating: number | null;
+  /** The rating in words — "Средний" for 3. */
+  threatLabel: string | null;
   riskLevel: number | null;
   riskLabel: string | null;
 }
@@ -20,6 +22,9 @@ export interface RiskControlLink {
   reductionPct: number;
   controlType: ControlType;
   applyOrder: number;
+  /** This link's own step of the reduction chain, computed server-side. */
+  scoreBefore: number | null;
+  scoreAfter: number | null;
 }
 
 export interface Risk {
@@ -28,6 +33,7 @@ export interface Risk {
   assetId: number;
   assetCode: string;
   assetName: string;
+  assetCriticality: string;
   assetRating: number;
   threatId: number;
   threatCode: string;

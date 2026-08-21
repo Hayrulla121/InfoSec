@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getRiskMatrix, type MatrixCell, type RiskMatrix } from '../api/analytics';
 import { errorMessage } from '../api/client';
+import { FormulaHint } from '../components/Formula';
+import { matrixCellFormula } from '../content/formulas';
 import { useI18n, type Lang } from '../i18n/I18nContext';
 
 /**
@@ -15,7 +17,7 @@ import { useI18n, type Lang } from '../i18n/I18nContext';
  */
 export default function RiskMatrixPage() {
   const navigate = useNavigate();
-  const { t, lang, level } = useI18n();
+  const { t, lang, level, threat, criticality } = useI18n();
   const [matrix, setMatrix] = useState<RiskMatrix | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -57,17 +59,27 @@ export default function RiskMatrixPage() {
                       <td
                         key={threatRating}
                         className={`matrix-cell level-${cell.riskLevel} ${
-                          cell.count ? 'matrix-cell-clickable' : ''
+                          cell.count ? 'matrix-cell-filled matrix-cell-clickable' : ''
                         }`}
-                        title={t.matrix.cellTitle(
-                          assetRating,
-                          threatRating,
-                          level(cell.riskLabel),
-                          cell.count,
-                        )}
                         onClick={() => openCell(cell)}
                       >
                         {cell.count ?? ''}
+                        {/* Revealed on cell hover: 25 permanent triggers would
+                            turn the heat map into a field of glyphs, and the
+                            grid's job is to be read at a glance first. */}
+                        <span className="matrix-cell-formula">
+                          <FormulaHint
+                            spec={matrixCellFormula(t.formula, level, threat, criticality, cell)}
+                            label={t.formula.ariaLabel(
+                              t.matrix.cellTitle(
+                                assetRating,
+                                threatRating,
+                                level(cell.riskLabel),
+                                cell.count,
+                              ),
+                            )}
+                          />
+                        </span>
                       </td>
                     );
                   })}

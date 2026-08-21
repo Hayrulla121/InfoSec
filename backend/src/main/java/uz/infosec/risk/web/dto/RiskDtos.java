@@ -26,7 +26,16 @@ public final class RiskDtos {
             String comment) {
     }
 
-    /** One attached control, as shown in the risk detail drawer. */
+    /**
+     * One attached control, as shown in the risk detail drawer.
+     *
+     * <p>{@code scoreBefore} / {@code scoreAfter} are this link's own step of
+     * the reduction chain, supplied by the server so the UI can show the
+     * arithmetic ("10.4000 − 10.4000 × 0.20 = 8.3200") without re-running any
+     * formula of its own. The implemented chain starts from the raw threat
+     * score; the planned chain continues from the current score, exactly as
+     * Excel's BC column starts from AW.
+     */
     public record RiskControlDto(
             Long linkId,
             Long controlId,
@@ -35,7 +44,9 @@ public final class RiskDtos {
             String treatmentMethod,
             BigDecimal reductionPct,
             ControlType controlType,
-            int applyOrder) {
+            int applyOrder,
+            BigDecimal scoreBefore,
+            BigDecimal scoreAfter) {
     }
 
     public record AttachControlRequest(
@@ -50,6 +61,8 @@ public final class RiskDtos {
     public record RiskStage(
             BigDecimal score,
             Integer threatRating,
+            /** The rating in words - "Средний" for 3. Excel column H. */
+            String threatLabel,
             Integer riskLevel,
             String riskLabel) {
     }
@@ -60,6 +73,7 @@ public final class RiskDtos {
             Long assetId,
             String assetCode,
             String assetName,
+            String assetCriticality,
             int assetRating,
             Long threatId,
             String threatCode,

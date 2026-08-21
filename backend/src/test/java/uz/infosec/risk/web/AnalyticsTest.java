@@ -204,6 +204,62 @@ class AnalyticsTest {
         // a=5, t=5 -> Критический(5) is worse than a=5,t=1 -> Низкий(2).
         assertThat(gauge.get("worstCurrentLevel").asInt()).isEqualTo(5);
         assertThat(gauge.get("worstCurrentLabel").asText()).isEqualTo("Критический");
+        // The needle's second operand travels with it, so the card can explain
+        // itself: 5 x 5 = 25 >= 20 -> Критический.
+        assertThat(gauge.get("worstCurrentThreatRating").asInt()).isEqualTo(5);
+    }
+
+    /**
+     * The threat rating that ships with a gauge must be the one that actually
+     * produced its level, or the "how is this calculated?" card would show
+     * operands that do not multiply out to the answer beside them.
+     *
+     * <p>The guarantee rests on classify(a, t) being non-decreasing in t for a
+     * fixed a, which is what lets two independent max() aggregates stay in step.
+     * This pins the case where the two risks differ in t but NOT in level -
+     * a=5 with t=4 and t=5 are both Критический - because that is exactly where
+     * a naive "worst risk" lookup could pick the wrong row.
+     */
+    @Test
+    void gaugeThreatRatingAlwaysMultipliesOutToTheGaugeLevel() throws Exception {
+        long assetId = asset("Gauge operand asset", "Критичная");
+        // t=4 (sum 20) and t=5 (sum 25): different ratings, same level 5.
+        create("/api/risks", """
+                {"assetId":%d,"threatId":%d,"name":"High"}"""
+                .formatted(assetId, threat("Gauge operand high", 4)));
+        create("/api/risks", """
+                {"assetId":%d,"threatId":%d,"name":"Top"}"""
+                .formatted(assetId, threat("Gauge operand top", 5)));
+
+        JsonNode gauge = null;
+        for (JsonNode g : fetch("/api/dashboard").get("assetGauges")) {
+            if (g.get("assetId").asLong() == assetId) {
+                gauge = g;
+            }
+        }
+
+        assertThat(gauge).isNotNull();
+        int a = gauge.get("criticalityRating").asInt();
+        int t = gauge.get("worstCurrentThreatRating").asInt();
+        assertThat(t).isEqualTo(5);
+        assertThat(a * t).isGreaterThanOrEqualTo(20);
+        assertThat(gauge.get("worstCurrentLevel").asInt()).isEqualTo(5);
+    }
+
+    @Test
+    void assetWithNoRisksHasNoThreatRatingToExplain() throws Exception {
+        long assetId = asset("Operand-less asset", "Высокая");
+
+        JsonNode gauge = null;
+        for (JsonNode g : fetch("/api/dashboard").get("assetGauges")) {
+            if (g.get("assetId").asLong() == assetId) {
+                gauge = g;
+            }
+        }
+
+        assertThat(gauge).isNotNull();
+        assertThat(gauge.get("worstCurrentThreatRating").isNull()).isTrue();
+        assertThat(gauge.get("worstResidualThreatRating").isNull()).isTrue();
     }
 
     @Test

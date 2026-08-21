@@ -104,8 +104,11 @@ export function LineChart({
   /**
    * Show every label when they fit, otherwise every nth. Rotating them or
    * letting them overlap both look worse than simply showing fewer.
+   *
+   * Six, not eight: these charts now sit two to a row, so a label has roughly
+   * half the width it used to. Eight month labels at that width collide.
    */
-  const labelStep = Math.ceil(labels.length / 8);
+  const labelStep = Math.ceil(labels.length / 6);
 
   return (
     <div className="chart">

@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { errorMessage } from '../api/client';
 import { IconAlert, IconShield } from '../components/Icons';
+import { ParticleNetwork } from '../components/ParticleNetwork';
 import { useI18n } from '../i18n/I18nContext';
 import { LanguageSwitcher } from '../components/LanguageSwitcher';
 
@@ -37,6 +38,7 @@ export default function LoginPage() {
 
   return (
     <div className="login-shell">
+      <ParticleNetwork />
       <form className="login-card" onSubmit={onSubmit}>
         <div className="login-brand">
           <span className="brand-mark" aria-hidden="true">

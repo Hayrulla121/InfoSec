@@ -414,6 +414,14 @@ export const uz: Dictionary = {
     Выполнено: 'Bajarilgan',
   },
 
+  threatLevel: {
+    Незначительный: 'Ahamiyatsiz',
+    Низкий: 'Past',
+    Средний: "O‘rta",
+    Высокий: 'Yuqori',
+    'Очень высокий': 'Juda yuqori',
+  },
+
   dictTitle: {
     ASSET_CRITICALITY: 'Aktivning muhimligi',
     THREAT_LEVEL: 'Tahdid darajasi',
@@ -425,5 +433,100 @@ export const uz: Dictionary = {
     select: '— tanlang —',
     none: '—',
     noAccess: 'kirish yo‘q',
+  },
+
+  formula: {
+    ariaLabel: (what: string) => `Qanday hisoblangan: ${what}`,
+    excelToggle: 'Excel formulasi',
+
+    srcTech: 'Texnik sahifa',
+    srcThreats: 'Tahdidlar reyestri',
+    srcAssets: 'Kalit AAlar reyestri',
+    srcRisks: 'Xavflar reyestri',
+    srcMatrix: 'Xavflar matritsasi',
+    column: (col: string) => `${col} ustuni`,
+
+    assetRatingTitle: 'Aktiv reytingi',
+    assetRatingLead:
+      'Har bir muhimlik darajasiga 1 dan 5 gacha son mos keladi. U «Texnik sahifa» ma\'lumotnomasidan olinadi.',
+    assetRatingInput: 'Aktivning muhimligi',
+    assetRatingExcel: '=VLOOKUP(E2;\'Техническая страница\'!$A$2:$B$6;2;FALSE)',
+
+    dreadSumTitle: 'DREAD yig‘indisi',
+    dreadSumLead:
+      'Tahdidning beshta ko‘rsatkichi, har biri 0 dan 5 ballgacha. Qo‘shiladi — 0 dan 25 gacha chiqadi.',
+    dreadRatingTitle: 'Tahdid darajasi',
+    dreadRatingLead:
+      'Ballar yig‘indisi beshta guruhdan biriga tushadi. Shu guruh tahdid darajasi bo‘ladi.',
+    dreadSumInput: 'Ballar yig‘indisi',
+    dreadSumExcel: '=SUM(L2:P2)',
+    dreadRatingExcel: '=IF(Q2<6;1;IF(Q2<11;2;IF(Q2<16;3;IF(Q2<21;4;5))))',
+
+    chainTitleImplemented: 'Joriy etilgan nazoratlardan keyingi ball',
+    chainTitlePlanned: 'Rejalashtirilgan nazoratlardan keyingi ball',
+    chainLeadImplemented:
+      'Har bir joriy etilgan nazorat tahdid balini o‘z foiziga kamaytiradi. Nazoratlar ketma-ket qo‘llanadi.',
+    chainLeadPlanned:
+      'Rejalashtirilgan nazoratlar balni yanada kamaytiradi — joriy etilganlar qoldirgan joydan boshlab.',
+    chainBase: 'Tahdid bali',
+    chainBaseCurrent: 'Joriy etilganlardan keyingi ball',
+    chainNone: 'Nazoratlar biriktirilmagan — ball o‘zgarmaydi.',
+    chainNote:
+      'Foizlar qo‘shilmaydi, ko‘paytiriladi: 50 % li ikkita nazorat 100 % emas, 75 % beradi.',
+    chainExcelImplemented: '=AH2-AH2*AJ2   (zanjir bo‘ylab shu tarzda)',
+    chainExcelPlanned: '=AW2-AW2*AX2   (zanjir bo‘ylab shu tarzda)',
+
+    riskLevelLead:
+      'Xavf darajasi — ikki bahoning kesishmasi: aktiv qanchalik muhim va tahdid qanchalik kuchli. Ularning kesishgan katagiga qaraymiz.',
+    riskLevelAsset: 'Aktivning muhimligi',
+    riskLevelThreat: 'Tahdid darajasi',
+    matrixAxisAsset: 'aktivning muhimligi',
+    matrixAxisThreat: 'tahdid darajasi',
+    matrixYouAreHere: 'Sizning katagingiz',
+
+    inherentTitle: 'Nazoratlarsiz xavf',
+    currentTitle: 'Joriy xavf darajasi',
+    residualTitle: 'Qoldiq xavf darajasi',
+    riskLevelExcel:
+      '=IF(AF2*BV2>=20;"Критический";\n IF(OR(AND(AF2=1;BV2<3);AND(BV2=1;AF2<4));"Незначительный";\n IF(AND(BV2>2;AF2*BV2>=10);"Высокий";\n IF(OR(AND(BV2<4;BV2*AF2>3;BV2*AF2<6);AND(BV2=3;AF2<3));"Низкий";\n "Средний"))))',
+
+    whyCritical: (asset: string, threat: string) =>
+      `«${asset}» aktivi va «${threat}» tahdidi birgalikda eng yuqori katakni beradi — xavf kritik.`,
+    whyNegligible: (asset: string, threat: string) =>
+      `«${threat}» tahdidi «${asset}» aktiviga jiddiy zarar yetkazish uchun juda kuchsiz.`,
+    whyHigh: (asset: string, threat: string) =>
+      `Muhim «${asset}» aktivida sezilarli «${threat}» tahdidi — xavf yuqori.`,
+    whyLow: (asset: string, threat: string) =>
+      `«${asset}» va «${threat}» birikmasi matritsaning quyi qismida qoladi.`,
+    whyMedium: (asset: string, threat: string) =>
+      `Aktiv «${asset}», lekin tahdid darajasi bor-yo‘g‘i «${threat}» — yuqoriga yetmaydi, o‘rta bo‘lib qoladi.`,
+
+    gaugeTitle: 'Strelka holati',
+    gaugeNote: (count: number) =>
+      count === 1
+        ? 'Bu aktiv bo‘yicha bitta xavf ro‘yxatga olingan.'
+        : `Bu aktiv bo‘yicha ${count} ta xavfning eng yomoni ko‘rsatilgan.`,
+    gaugeNoRisks: 'Aktiv bo‘yicha xavflar ro‘yxatga olinmagan — strelka ko‘rsatilmaydi.',
+    gaugeWhySame:
+      'Aktivning muhimligi faqat yuqori chegarani belgilaydi: tahdid darajasi past ekan, kritik aktiv ham o‘rta xavf beradi.',
+
+    percentTitle: 'Joriy etilgan nazoratlar ulushi',
+    percentLead:
+      'Rejalashtirilganlari bilan birga olganda, «xavf — nazorat» bog‘lanishlarining qanchasi joriy etilgan.',
+    percentImplemented: 'Joriy etilgan',
+    percentPlanned: 'Rejalashtirilgan',
+    percentTotal: 'Jami bog‘lanishlar',
+    percentExcel: '=Joriy/(Joriy+Rejalashtirilgan)*100',
+    overdueTitle: 'Muddati o‘tgan tadbirlar',
+    overdueLead:
+      'Joriy etish sanasi o‘tib ketgan, ammo tadbirlar holati hali «Bajarilgan» bo‘lmagan xavflar.',
+    overdueToday: 'Bugun',
+    overdueNote: 'Faqat joriy etish muddati ko‘rsatilgan xavflar hisobga olinadi.',
+    overdueExcel: '=COUNTIFS(O:O;"<"&TODAY();N:N;"<>Выполнено")',
+
+    matrixCellTitle: 'Matritsa katagi',
+    matrixCount: 'Shu katakdagi xavflar',
+    matrixEmpty: 'yo‘q',
+    matrixCellExcel: '=COUNTIFS(\'Реестр рисков\'!$AF:$AF;$B2;\'Реестр рисков\'!$BV:$BV;C$7)',
   },
 };

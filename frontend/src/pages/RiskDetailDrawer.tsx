@@ -4,6 +4,8 @@ import { controlsApi, type Control } from '../api/registries';
 import { errorMessage } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import { LevelBadge } from '../components/DataTable';
+import { FormulaHint, type FormulaSpec } from '../components/Formula';
+import { assetRatingFormula, chainFormula, riskStageFormula } from '../content/formulas';
 import { useI18n } from '../i18n/I18nContext';
 
 /** One stage of the inherent -> current -> residual progression. */
@@ -15,6 +17,8 @@ function StageCard({
   scoreText,
   ratingText,
   dash,
+  formula,
+  formulaLabel,
 }: {
   title: string;
   stage: RiskStage;
@@ -23,10 +27,15 @@ function StageCard({
   scoreText: string | null;
   ratingText: string;
   dash: string;
+  formula: FormulaSpec | null;
+  formulaLabel: string;
 }) {
   return (
     <div className="stage-card">
-      <div className="stage-title">{title}</div>
+      <div className="stage-title">
+        {title}
+        {formula && <FormulaHint spec={formula} label={formulaLabel} />}
+      </div>
       <div className="stage-body">
         {stage.riskLevel ? (
           <>
@@ -62,7 +71,7 @@ export default function RiskDetailDrawer({
   onChanged: (risk: Risk) => void;
 }) {
   const { can } = useAuth();
-  const { t, level } = useI18n();
+  const { t, level, threat, criticality } = useI18n();
   const mayAttach = can('RISK_CONTROLS', 'CREATE');
   const mayDetach = can('RISK_CONTROLS', 'DELETE');
 
@@ -136,6 +145,13 @@ export default function RiskDetailDrawer({
           <div>
             <span className="muted">{t.drawer.asset}: </span>
             {risk.assetCode} · {risk.assetName} <LevelBadge level={risk.assetRating} />
+            <FormulaHint
+              spec={assetRatingFormula(t.formula, criticality, {
+                criticality: risk.assetCriticality,
+                criticalityRating: risk.assetRating,
+              })}
+              label={t.formula.ariaLabel(`${risk.assetCode} · ${t.formula.assetRatingTitle}`)}
+            />
           </div>
           <div>
             <span className="muted">{t.drawer.threat}: </span>
@@ -159,6 +175,8 @@ export default function RiskDetailDrawer({
             scoreText={null}
             ratingText={t.drawer.threatRating(risk.inherent.threatRating ?? t.common.none)}
             dash={t.common.none}
+            formula={riskStageFormula(t.formula, level, threat, criticality, risk, 'inherent')}
+            formulaLabel={t.formula.ariaLabel(`${risk.code} · ${t.drawer.inherent}`)}
           />
           <span className="stage-arrow">→</span>
           <StageCard
@@ -169,6 +187,8 @@ export default function RiskDetailDrawer({
             scoreText={risk.current.score != null ? t.drawer.score(Number(risk.current.score)) : null}
             ratingText={t.drawer.threatRating(risk.current.threatRating ?? t.common.none)}
             dash={t.common.none}
+            formula={riskStageFormula(t.formula, level, threat, criticality, risk, 'current')}
+            formulaLabel={t.formula.ariaLabel(`${risk.code} · ${t.drawer.current}`)}
           />
           <span className="stage-arrow">→</span>
           <StageCard
@@ -179,6 +199,8 @@ export default function RiskDetailDrawer({
             scoreText={risk.residual.score != null ? t.drawer.score(Number(risk.residual.score)) : null}
             ratingText={t.drawer.threatRating(risk.residual.threatRating ?? t.common.none)}
             dash={t.common.none}
+            formula={riskStageFormula(t.formula, level, threat, criticality, risk, 'residual')}
+            formulaLabel={t.formula.ariaLabel(`${risk.code} · ${t.drawer.residual}`)}
           />
         </div>
 
@@ -197,6 +219,35 @@ export default function RiskDetailDrawer({
           >
             {t.drawer.tabPlanned(risk.plannedControls.length)}
           </button>
+          {/* The chain for whichever tab is open - this is the arithmetic the
+              table below only shows the ingredients of. */}
+          <span className="tabs-aside">
+            <FormulaHint
+              spec={chainFormula(t.formula, {
+                kind: tab,
+                links: attached,
+                baseScore:
+                  tab === 'IMPLEMENTED'
+                    ? risk.threatTotalScore
+                    : risk.current.score === null
+                      ? null
+                      : Number(risk.current.score),
+                finalScore:
+                  tab === 'IMPLEMENTED'
+                    ? risk.current.score === null
+                      ? null
+                      : Number(risk.current.score)
+                    : risk.residual.score === null
+                      ? null
+                      : Number(risk.residual.score),
+              })}
+              label={t.formula.ariaLabel(
+                tab === 'IMPLEMENTED'
+                  ? t.formula.chainTitleImplemented
+                  : t.formula.chainTitlePlanned,
+              )}
+            />
+          </span>
         </div>
 
         {attached.length === 0 ? (

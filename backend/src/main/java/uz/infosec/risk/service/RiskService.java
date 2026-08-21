@@ -10,11 +10,21 @@ import uz.infosec.risk.error.NotFoundException;
 import uz.infosec.risk.repository.*;
 import uz.infosec.risk.web.dto.RiskDtos.*;
 
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 /** Реестр рисков. */
 @Service
 public class RiskService {
+
+    /**
+     * Only the pure label lookup is needed here, and toDto is static, so a
+     * single shared instance beats threading the bean through every call site.
+     * RiskCalculationService holds no state - that is what makes this safe.
+     */
+    private static final RiskCalculationService THREAT_LABELS = new RiskCalculationService();
 
     private final RiskRepository riskRepository;
     private final AssetRepository assetRepository;
@@ -109,7 +119,14 @@ public class RiskService {
 
     @Transactional(readOnly = true)
     public List<RiskControlDto> listControls(Long riskId) {
-        return load(riskId).getControls().stream().map(RiskService::toControlDto).toList();
+        Risk risk = load(riskId);
+        // Both chains, each threaded from its own starting score - implemented
+        // first, because the planned one continues where it leaves off.
+        List<RiskControlDto> all = new ArrayList<>(controlsOfType(
+                risk, ControlType.IMPLEMENTED,
+                BigDecimal.valueOf(risk.getThreat().getTotalScore())));
+        all.addAll(controlsOfType(risk, ControlType.PLANNED, risk.getCurrentScore()));
+        return all;
     }
 
     @Transactional
@@ -171,32 +188,61 @@ public class RiskService {
 
         return new RiskResponse(
                 r.getId(), r.getCode(),
-                a.getId(), a.getCode(), a.getName(), a.getCriticalityRating(),
+                a.getId(), a.getCode(), a.getName(), a.getCriticality(), a.getCriticalityRating(),
                 t.getId(), t.getCode(), t.getDescription(), t.getTotalScore(),
                 r.getName(), r.getIndicators(), r.getOwner(),
                 r.getTreatmentMethod(), r.getMeasureStatus(),
                 r.getImplementationDeadline(), r.getComment(),
                 new RiskStage(null, r.getInherentThreatRating(),
+                        threatWord(r.getInherentThreatRating()),
                         r.getInherentRiskLevel(), r.getInherentRiskLabel()),
                 new RiskStage(r.getCurrentScore(), r.getCurrentThreatRating(),
+                        threatWord(r.getCurrentThreatRating()),
                         r.getCurrentRiskLevel(), r.getCurrentRiskLabel()),
                 new RiskStage(r.getResidualScore(), r.getResidualThreatRating(),
+                        threatWord(r.getResidualThreatRating()),
                         r.getResidualRiskLevel(), r.getResidualRiskLabel()),
-                controlsOfType(r, ControlType.IMPLEMENTED),
-                controlsOfType(r, ControlType.PLANNED),
+                // The implemented chain starts at the raw threat score, the
+                // planned chain continues from where the implemented one ended.
+                controlsOfType(r, ControlType.IMPLEMENTED, BigDecimal.valueOf(t.getTotalScore())),
+                controlsOfType(r, ControlType.PLANNED, r.getCurrentScore()),
                 r.getCreatedAt(), r.getCreatedBy(), r.getUpdatedAt(), r.getUpdatedBy());
     }
 
-    private static List<RiskControlDto> controlsOfType(Risk risk, ControlType type) {
-        return risk.getControls().stream()
-                .filter(rc -> rc.getControlType() == type)
-                .map(RiskService::toControlDto)
-                .toList();
+    /** Excel column H: a threat rating in words. Null stays null. */
+    private static String threatWord(Integer rating) {
+        return rating == null ? null : THREAT_LABELS.threatLevelLabel(rating);
     }
 
-    private static RiskControlDto toControlDto(RiskControl rc) {
-        Control c = rc.getControl();
-        return new RiskControlDto(rc.getId(), c.getId(), c.getCode(), c.getName(),
-                c.getTreatmentMethod(), c.getReductionPct(), rc.getControlType(), rc.getApplyOrder());
+    /**
+     * Maps one chain of links, threading the running score through them so each
+     * DTO carries the step it is responsible for.
+     *
+     * <p>Order is by apply_order: the arithmetic is commutative, so the result
+     * does not depend on it, but a chain shown out of order would not read as a
+     * chain. A null base (a risk not yet calculated) leaves the steps null
+     * rather than inventing a starting point.
+     */
+    private static List<RiskControlDto> controlsOfType(Risk risk, ControlType type, BigDecimal base) {
+        BigDecimal running = base == null ? null : RiskCalculationService.toWorkingScale(base);
+        List<RiskControlDto> out = new ArrayList<>();
+        List<RiskControl> links = risk.getControls().stream()
+                .filter(rc -> rc.getControlType() == type)
+                .sorted(Comparator.comparingInt(RiskControl::getApplyOrder))
+                .toList();
+
+        for (RiskControl rc : links) {
+            Control c = rc.getControl();
+            BigDecimal before = running;
+            BigDecimal after = running == null
+                    ? null : RiskCalculationService.reduceOnce(running, c.getReductionPct());
+            running = after;
+            out.add(new RiskControlDto(rc.getId(), c.getId(), c.getCode(), c.getName(),
+                    c.getTreatmentMethod(), c.getReductionPct(), rc.getControlType(),
+                    rc.getApplyOrder(),
+                    before == null ? null : RiskCalculationService.roundScore(before),
+                    after == null ? null : RiskCalculationService.roundScore(after)));
+        }
+        return out;
     }
 }

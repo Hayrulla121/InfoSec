@@ -151,14 +151,26 @@ public interface RiskRepository extends JpaRepository<Risk, Long> {
     List<Object[]> countByMeasureStatus();
 
     /**
-     * Per-asset summary for the gauge cards: risk count and the WORST (highest)
-     * current and residual level on that asset.
+     * Per-asset summary for the gauge cards: risk count, the WORST (highest)
+     * current and residual level on that asset, and the threat rating that
+     * produced each.
      *
      * <p>Done as one grouped query rather than a loop over assets - the loop
      * would be an N+1 over however many assets the bank registers.
+     *
+     * <p><b>Why max(threatRating) is the right partner for max(riskLevel).</b>
+     * These are separate aggregates, so in general they could come from
+     * different rows. They cannot here: for a FIXED asset rating a, the
+     * classify(a, t) table is non-decreasing in t (a=5 gives 2,3,4,5,5; a=4
+     * gives 2,3,4,4,5; and so on down to a=1: 1,1,2,3,3). Every risk in a group
+     * shares the same a, so the risk with the highest t is also one with the
+     * highest level - and max over the group of classify(a, t) equals
+     * classify(a, max t). The pair is therefore always self-consistent, which
+     * is what lets the dashboard explain a needle as "a x t" honestly.
      */
     @Query("""
-            select a.id, count(r), max(r.currentRiskLevel), max(r.residualRiskLevel)
+            select a.id, count(r), max(r.currentRiskLevel), max(r.residualRiskLevel),
+                   max(r.currentThreatRating), max(r.residualThreatRating)
             from Risk r join r.asset a
             group by a.id
             """)

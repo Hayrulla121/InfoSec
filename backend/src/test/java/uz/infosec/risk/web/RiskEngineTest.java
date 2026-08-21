@@ -108,6 +108,76 @@ class RiskEngineTest {
     }
 
     /**
+     * The per-link steps that let the UI show its work.
+     *
+     * <p>Each link reports the score going into it and coming out, so the
+     * formula hint can render "13 - 13 x 20% = 10.4" without doing any
+     * arithmetic of its own. Two invariants matter and are asserted here:
+     * the chain is CONTIGUOUS (each step starts where the previous ended), and
+     * it TERMINATES at the stage score already stored on the risk. If either
+     * broke, the hint would narrate a derivation that does not reach the number
+     * printed next to it.
+     */
+    @Test
+    void controlLinksCarryTheirOwnStepOfTheReductionChain() throws Exception {
+        long assetId = criticalAsset("Chain asset");
+        long threatId = threat13("Chain threat");
+        long riskId = risk(assetId, threatId, "Chain risk");
+
+        attach(riskId, control("Chain impl 20%", "0.20"), "IMPLEMENTED");
+        attach(riskId, control("Chain plan 20%", "0.20"), "PLANNED");
+        attach(riskId, control("Chain plan 50%", "0.50"), "PLANNED");
+
+        JsonNode r = getRisk(riskId);
+
+        // Implemented chain starts at the raw threat score: 13 -> 10.4.
+        JsonNode impl = r.get("implementedControls");
+        assertThat(impl).hasSize(1);
+        assertThat(impl.get(0).get("scoreBefore").decimalValue()).isEqualByComparingTo("13");
+        assertThat(impl.get(0).get("scoreAfter").decimalValue()).isEqualByComparingTo("10.4");
+        assertThat(r.get("current").get("score").decimalValue()).isEqualByComparingTo("10.4");
+
+        // Planned chain CONTINUES from the current score, as Excel's BC starts
+        // from AW rather than from AH: 10.4 -> 8.32 -> 4.16.
+        JsonNode planned = r.get("plannedControls");
+        assertThat(planned).hasSize(2);
+        assertThat(planned.get(0).get("scoreBefore").decimalValue()).isEqualByComparingTo("10.4");
+        assertThat(planned.get(0).get("scoreAfter").decimalValue()).isEqualByComparingTo("8.32");
+        assertThat(planned.get(1).get("scoreBefore").decimalValue()).isEqualByComparingTo("8.32");
+        assertThat(planned.get(1).get("scoreAfter").decimalValue()).isEqualByComparingTo("4.16");
+        assertThat(r.get("residual").get("score").decimalValue()).isEqualByComparingTo("4.16");
+
+        // Contiguity, stated as a rule rather than as three literals.
+        for (int i = 1; i < planned.size(); i++) {
+            assertThat(planned.get(i).get("scoreBefore").decimalValue())
+                    .isEqualByComparingTo(planned.get(i - 1).get("scoreAfter").decimalValue());
+        }
+    }
+
+    /** With nothing attached there are no steps, and no chain to explain. */
+    @Test
+    void aRiskWithoutControlsHasNoChainSteps() throws Exception {
+        long riskId = risk(criticalAsset("Bare asset"), threat13("Bare threat"), "Bare risk");
+
+        JsonNode r = getRisk(riskId);
+        assertThat(r.get("implementedControls")).isEmpty();
+        assertThat(r.get("plannedControls")).isEmpty();
+        // The stage score is still the raw threat score, so the hint's "base"
+        // and "result" simply coincide.
+        assertThat(r.get("current").get("score").decimalValue()).isEqualByComparingTo("13");
+    }
+
+    /** The drawer explains the asset side too, so it needs the label, not just the rating. */
+    @Test
+    void riskCarriesTheAssetCriticalityLabelAlongsideItsRating() throws Exception {
+        long riskId = risk(criticalAsset("Labelled asset"), threat13("Labelled threat"), "Labelled");
+
+        JsonNode r = getRisk(riskId);
+        assertThat(r.get("assetCriticality").asText()).isEqualTo("Критичная");
+        assertThat(r.get("assetRating").asInt()).isEqualTo(5);
+    }
+
+    /**
      * ACCEPTANCE CRITERION 3, end to end.
      *
      * <p>Rating-5 asset x a threat scoring 13:

@@ -5,6 +5,8 @@ import { useAuth } from '../auth/AuthContext';
 import { ConfirmDialog, DataTable, LevelBadge, Modal, type Column } from '../components/DataTable';
 import { ColumnFilters, useRegistryFilters, type FilterDef } from '../components/ColumnFilters';
 import { IconPlus, IconSearch } from '../components/Icons';
+import { FormulaHint } from '../components/Formula';
+import { threatRatingFormula, threatSumFormula } from '../content/formulas';
 import { useI18n } from '../i18n/I18nContext';
 
 const EMPTY: ThreatRequest = {
@@ -27,7 +29,7 @@ const DREAD_KEYS: { key: keyof ThreatRequest; en: string }[] = [
 
 export default function ThreatsPage() {
   const { can } = useAuth();
-  const { t, level } = useI18n();
+  const { t, level, threat } = useI18n();
 
   /** DREAD criterion label in the active language, keyed by field name. */
   const dreadLabel = (key: keyof ThreatRequest) =>
@@ -140,6 +142,16 @@ export default function ThreatsPage() {
     { field: 'levelLabel', label: t.threats.colLevel, translate: level },
   ];
 
+  // Reuses the form's own field labels, so the hint always names the five
+  // criteria exactly as the editor beside it does.
+  const dreadNames = {
+    discoverability: t.threats.dreadDiscoverability,
+    repeatability: t.threats.dreadRepeatability,
+    exploitability: t.threats.dreadExploitability,
+    affectedUsers: t.threats.dreadAffectedUsers,
+    damage: t.threats.dreadDamage,
+  };
+
   const columns: Column<Threat>[] = [
     { key: 'code', header: t.threats.colCode, width: '70px', render: (row) => <strong>{row.code}</strong> },
     { key: 'description', header: t.threats.colDescription, render: (row) => <span className="cell-text">{row.description}</span> },
@@ -148,15 +160,32 @@ export default function ThreatsPage() {
     { key: 'e', header: t.threats.dreadExploitability.charAt(0), width: '48px', render: (row) => row.exploitability },
     { key: 'a', header: t.threats.dreadAffectedUsers.charAt(0), width: '48px', render: (row) => row.affectedUsers },
     { key: 'dm', header: t.threats.dreadDamage.charAt(0), width: '48px', render: (row) => row.damage },
-    { key: 'sum', header: t.threats.colSum, width: '70px', render: (row) => <strong>{row.totalScore}</strong> },
+    {
+      key: 'sum',
+      header: t.threats.colSum,
+      width: '92px',
+      render: (row) => (
+        <span className="cell-formula">
+          <strong>{row.totalScore}</strong>
+          <FormulaHint
+            spec={threatSumFormula(t.formula, dreadNames, row)}
+            label={t.formula.ariaLabel(`${row.code} · ${t.formula.dreadSumTitle}`)}
+          />
+        </span>
+      ),
+    },
     {
       key: 'level',
       header: t.threats.colLevel,
-      width: '170px',
+      width: '190px',
       render: (row) => (
-        <>
+        <span className="cell-formula">
           <LevelBadge level={row.rating} /> {level(row.levelLabel)}
-        </>
+          <FormulaHint
+            spec={threatRatingFormula(t.formula, threat, row)}
+            label={t.formula.ariaLabel(`${row.code} · ${t.formula.dreadRatingTitle}`)}
+          />
+        </span>
       ),
     },
   ];

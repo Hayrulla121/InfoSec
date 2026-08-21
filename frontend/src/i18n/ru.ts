@@ -415,6 +415,15 @@ export const ru = {
     Выполнено: 'Выполнено',
   } as Record<string, string>,
 
+  /** Threat levels. Same five words as risk levels except the top one. */
+  threatLevel: {
+    Незначительный: 'Незначительный',
+    Низкий: 'Низкий',
+    Средний: 'Средний',
+    Высокий: 'Высокий',
+    'Очень высокий': 'Очень высокий',
+  },
+
   dictTitle: {
     ASSET_CRITICALITY: 'Значимость актива',
     THREAT_LEVEL: 'Уровень угрозы',
@@ -426,6 +435,121 @@ export const ru = {
     select: '— выберите —',
     none: '—',
     noAccess: 'нет доступа',
+  },
+
+  /**
+   * Strings for the "how was this calculated?" hints.
+   *
+   * Written for a risk officer, not a programmer. The lead sentence says what
+   * is happening in words; the numbers arrive with their labels attached
+   * ("Критичная · 5", never a bare 5); and where a rule decides something, the
+   * card SHOWS the rule as a picture - the 5x5 grid, the band ladder - rather
+   * than transcribing its condition. The literal workbook formula is still
+   * there for anyone auditing against Excel, folded away at the bottom.
+   */
+  formula: {
+    ariaLabel: (what: string) => `Как рассчитано: ${what}`,
+    excelToggle: 'Формула из Excel',
+
+    srcTech: 'Техническая страница',
+    srcThreats: 'Реестр угроз',
+    srcAssets: 'Реестр ключевых ИА',
+    srcRisks: 'Реестр рисков',
+    srcMatrix: 'Матрица рисков',
+    column: (col: string) => `столбец ${col}`,
+
+    // --- asset rating
+    assetRatingTitle: 'Рейтинг актива',
+    assetRatingLead:
+      'Каждой словесной оценке значимости соответствует число от 1 до 5. Оно берётся из справочника на «Технической странице».',
+    assetRatingInput: 'Значимость актива',
+    assetRatingExcel: '=ВПР(E2;\'Техническая страница\'!$A$2:$B$6;2;ЛОЖЬ)',
+
+    // --- DREAD
+    dreadSumTitle: 'Сумма DREAD',
+    dreadSumLead:
+      'Пять показателей угрозы, каждый от 0 до 5 баллов. Складываются — получается от 0 до 25.',
+    dreadRatingTitle: 'Уровень угрозы',
+    dreadRatingLead: 'Сумма баллов попадает в одну из пяти групп. Группа и есть уровень угрозы.',
+    dreadSumInput: 'Сумма баллов',
+    dreadSumExcel: '=СУММ(L2:P2)',
+    dreadRatingExcel: '=ЕСЛИ(Q2<6;1;ЕСЛИ(Q2<11;2;ЕСЛИ(Q2<16;3;ЕСЛИ(Q2<21;4;5))))',
+
+    // --- reduction chain
+    chainTitleImplemented: 'Счёт после внедрённых контролей',
+    chainTitlePlanned: 'Счёт после запланированных контролей',
+    chainLeadImplemented:
+      'Каждый внедрённый контроль снижает счёт угрозы на свой процент. Контроли применяются один за другим.',
+    chainLeadPlanned:
+      'Запланированные контроли снижают счёт дальше — начиная с того, что уже дали внедрённые.',
+    chainBase: 'Счёт угрозы',
+    chainBaseCurrent: 'Счёт после внедрённых',
+    chainNone: 'Контроли не привязаны — счёт остаётся прежним.',
+    chainNote:
+      'Проценты перемножаются, а не складываются: два контроля по 50 % дают 75 %, а не 100 %.',
+    chainExcelImplemented: '=AH2-AH2*AJ2   (и так далее по цепочке)',
+    chainExcelPlanned: '=AW2-AW2*AX2   (и так далее по цепочке)',
+
+    // --- classify(a, t)
+    riskLevelLead:
+      'Уровень риска — это пересечение двух оценок: насколько важен актив и насколько силён уровень угрозы. Смотрим клетку на их пересечении.',
+    riskLevelAsset: 'Значимость актива',
+    riskLevelThreat: 'Уровень угрозы',
+    matrixAxisAsset: 'значимость актива',
+    matrixAxisThreat: 'уровень угрозы',
+    matrixYouAreHere: 'Ваша клетка',
+
+    inherentTitle: 'Риск без контролей',
+    currentTitle: 'Текущий уровень риска',
+    residualTitle: 'Остаточный уровень риска',
+    riskLevelExcel:
+      '=ЕСЛИ(AF2*BV2>=20;"Критический";\n ЕСЛИ(ИЛИ(И(AF2=1;BV2<3);И(BV2=1;AF2<4));"Незначительный";\n ЕСЛИ(И(BV2>2;AF2*BV2>=10);"Высокий";\n ЕСЛИ(ИЛИ(И(BV2<4;BV2*AF2>3;BV2*AF2<6);И(BV2=3;AF2<3));"Низкий";\n "Средний"))))',
+
+    /**
+     * Plain-language reason, phrased as a sentence a person would say out loud.
+     * Each takes the two words, not the two numbers.
+     */
+    whyCritical: (asset: string, threat: string) =>
+      `Актив «${asset}» и угроза «${threat}» вместе дают верхнюю клетку — риск критический.`,
+    whyNegligible: (asset: string, threat: string) =>
+      `Угроза «${threat}» слишком слаба, чтобы всерьёз навредить активу «${asset}».`,
+    whyHigh: (asset: string, threat: string) =>
+      `Заметная угроза «${threat}» на важном активе «${asset}» — риск высокий.`,
+    whyLow: (asset: string, threat: string) =>
+      `Сочетание «${asset}» и «${threat}» остаётся в нижней части матрицы.`,
+    whyMedium: (asset: string, threat: string) =>
+      `Актив «${asset}», но уровень угрозы всего «${threat}» — до высокого не дотягивает, остаётся средний.`,
+
+    // --- gauge
+    gaugeTitle: 'Положение стрелки',
+    gaugeNote: (count: number) =>
+      count === 1
+        ? 'По этому активу зарегистрирован один риск.'
+        : `Показан худший из ${count} рисков по этому активу.`,
+    gaugeNoRisks: 'По активу нет зарегистрированных рисков — стрелка не выводится.',
+    gaugeWhySame:
+      'Значимость актива задаёт только потолок: пока уровень угрозы низкий, даже критичный актив даёт средний риск.',
+
+    // --- dashboard counters
+    percentTitle: 'Доля внедрённых контролей',
+    percentLead:
+      'Сколько привязок «риск — контроль» уже внедрено, из всех привязок вместе с запланированными.',
+    percentImplemented: 'Внедрено',
+    percentPlanned: 'Запланировано',
+    percentTotal: 'Всего привязок',
+    percentExcel: '=Внедрённые/(Внедрённые+Запланированные)*100',
+    overdueTitle: 'Просроченные мероприятия',
+    overdueLead:
+      'Риски, у которых дата внедрения уже прошла, а статус мероприятий ещё не «Выполнено».',
+    overdueToday: 'Сегодня',
+    overdueNote: 'Учитываются только риски с указанным сроком внедрения.',
+    overdueExcel: '=СЧЁТЕСЛИМН(O:O;"<"&СЕГОДНЯ();N:N;"<>Выполнено")',
+
+    // --- matrix cell
+    matrixCellTitle: 'Клетка матрицы',
+    matrixCount: 'Рисков в этой клетке',
+    matrixEmpty: 'нет',
+    matrixCellExcel: '=СЧЁТЕСЛИМН(\'Реестр рисков\'!$AF:$AF;$B2;\'Реестр рисков\'!$BV:$BV;C$7)',
   },
 };
 

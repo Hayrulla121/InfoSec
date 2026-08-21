@@ -118,12 +118,18 @@ public class AnalyticsService {
                             ? null : ((Number) row[2]).intValue();
                     Integer worstResidual = row == null || row[3] == null
                             ? null : ((Number) row[3]).intValue();
+                    Integer currentThreat = row == null || row[4] == null
+                            ? null : ((Number) row[4]).intValue();
+                    Integer residualThreat = row == null || row[5] == null
+                            ? null : ((Number) row[5]).intValue();
                     return new AssetGauge(
                             asset.getId(), asset.getCode(), asset.getName(),
                             asset.getCriticality(), asset.getCriticalityRating(),
                             riskCount,
                             worstCurrent, labelOf(worstCurrent),
-                            worstResidual, labelOf(worstResidual));
+                            worstResidual, labelOf(worstResidual),
+                            currentThreat, residualThreat,
+                            threatWord(currentThreat), threatWord(residualThreat));
                 })
                 .sorted(Comparator
                         // Worst first: that is what a manager wants at the top.
@@ -229,5 +235,10 @@ public class AnalyticsService {
 
     private String labelOf(Integer level) {
         return level == null ? null : RiskLevel.ofLevel(level).getLabel();
+    }
+
+    /** A threat rating in words, so the gauge card can read as a sentence. */
+    private String threatWord(Integer rating) {
+        return rating == null ? null : calculator.threatLevelLabel(rating);
     }
 }

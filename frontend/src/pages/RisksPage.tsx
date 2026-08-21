@@ -8,6 +8,8 @@ import { useAuth } from '../auth/AuthContext';
 import { ConfirmDialog, DataTable, LevelBadge, Modal, type Column } from '../components/DataTable';
 import { ColumnFilters, useRegistryFilters, type FilterDef } from '../components/ColumnFilters';
 import { IconPlus, IconSearch } from '../components/Icons';
+import { FormulaHint } from '../components/Formula';
+import { riskStageFormula } from '../content/formulas';
 import { useI18n } from '../i18n/I18nContext';
 import RiskDetailDrawer from './RiskDetailDrawer';
 
@@ -25,7 +27,7 @@ const EMPTY: RiskRequest = {
 
 export default function RisksPage() {
   const { can } = useAuth();
-  const { t, level, method, status } = useI18n();
+  const { t, level, threat, criticality, method, status } = useI18n();
 
   /**
    * Matrix drill-down: /risks?assetRating=5&threatRating=3 arrives from a
@@ -207,28 +209,44 @@ export default function RisksPage() {
     {
       key: 'current',
       header: t.risks.colCurrent,
-      width: '150px',
-      render: (r) =>
-        r.current.riskLevel ? (
-          <>
+      width: '172px',
+      render: (r) => {
+        const spec = riskStageFormula(t.formula, level, threat, criticality, r, 'current');
+        return r.current.riskLevel ? (
+          <span className="cell-formula">
             <LevelBadge level={r.current.riskLevel} /> {level(r.current.riskLabel)}
-          </>
+            {spec && (
+              <FormulaHint
+                spec={spec}
+                label={t.formula.ariaLabel(`${r.code} · ${spec.title}`)}
+              />
+            )}
+          </span>
         ) : (
           '—'
-        ),
+        );
+      },
     },
     {
       key: 'residual',
       header: t.risks.colResidual,
-      width: '150px',
-      render: (r) =>
-        r.residual.riskLevel ? (
-          <>
+      width: '172px',
+      render: (r) => {
+        const spec = riskStageFormula(t.formula, level, threat, criticality, r, 'residual');
+        return r.residual.riskLevel ? (
+          <span className="cell-formula">
             <LevelBadge level={r.residual.riskLevel} /> {level(r.residual.riskLabel)}
-          </>
+            {spec && (
+              <FormulaHint
+                spec={spec}
+                label={t.formula.ariaLabel(`${r.code} · ${spec.title}`)}
+              />
+            )}
+          </span>
         ) : (
           '—'
-        ),
+        );
+      },
     },
     { key: 'status', header: t.risks.colStatus, width: '140px', render: (r) => status(r.measureStatus) },
   ];

@@ -36,6 +36,11 @@ export interface AssetGauge {
   worstCurrentLabel: string | null;
   worstResidualLevel: number | null;
   worstResidualLabel: string | null;
+  /** The `t` that produced each level — the second operand of a x t. */
+  worstCurrentThreatRating: number | null;
+  worstResidualThreatRating: number | null;
+  worstCurrentThreatLabel: string | null;
+  worstResidualThreatLabel: string | null;
 }
 
 export interface LevelCount {

@@ -90,14 +90,32 @@ public class RiskCalculationService {
      * such limit.
      */
     public BigDecimal applyReductions(BigDecimal baseScore, List<BigDecimal> reductionPercentages) {
-        BigDecimal score = baseScore.setScale(WORKING_SCALE, RoundingMode.HALF_UP);
+        BigDecimal score = toWorkingScale(baseScore);
         for (BigDecimal pct : reductionPercentages) {
-            if (pct == null) {
-                continue;
-            }
-            // score - score*pct, written exactly as the spreadsheet does it.
-            score = score.subtract(score.multiply(pct));
+            score = reduceOnce(score, pct);
         }
+        return roundScore(score);
+    }
+
+    /**
+     * One link of the reduction chain: {@code score - score*pct}, written
+     * exactly as the spreadsheet does it. A null percentage is a no-op.
+     *
+     * <p>Public and static so the DTO layer can replay the chain step by step
+     * for the "how was this calculated?" hint without restating the arithmetic.
+     * There is one expression for a reduction in this codebase, and it is here.
+     */
+    public static BigDecimal reduceOnce(BigDecimal score, BigDecimal pct) {
+        return pct == null ? score : score.subtract(score.multiply(pct));
+    }
+
+    /** Lifts a score to the intermediate scale the chain runs at. */
+    public static BigDecimal toWorkingScale(BigDecimal score) {
+        return score.setScale(WORKING_SCALE, RoundingMode.HALF_UP);
+    }
+
+    /** Rounds a working-scale score down to the stored/displayed scale. */
+    public static BigDecimal roundScore(BigDecimal score) {
         return score.setScale(SCORE_SCALE, RoundingMode.HALF_UP);
     }
 

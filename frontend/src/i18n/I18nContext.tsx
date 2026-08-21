@@ -16,6 +16,8 @@ interface I18nApi {
   t: Dictionary;
   /** Translates a value the server stored in Russian, for display only. */
   level: (label: string | null | undefined) => string;
+  /** Threat levels: the same five words as `level` bar the top one. */
+  threat: (label: string | null | undefined) => string;
   criticality: (label: string | null | undefined) => string;
   method: (label: string | null | undefined) => string;
   status: (label: string | null | undefined) => string;
@@ -61,6 +63,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
       setLang,
       t,
       level: translate(t.riskLevel),
+      threat: translate(t.threatLevel),
       criticality: translate(t.criticality),
       method: translate(t.treatmentMethod),
       status: translate(t.measureStatus),

@@ -44,7 +44,7 @@ server:
 app:
   # Where the React dev server lives; read by CorsConfig.
   cors:
-    allowed-origins: http://localhost:5173
+    allowed-origins: http://localhost:5173,http://localhost:5174
 
   jwt:
     # HMAC-SHA256 signing key, base64-encoded, 384 bits.

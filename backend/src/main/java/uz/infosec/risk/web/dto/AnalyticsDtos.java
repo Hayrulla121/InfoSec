@@ -40,7 +40,15 @@ public final class AnalyticsDtos {
 
     // ---------------------------------------------------------- dashboard
 
-    /** One speedometer card: an asset and the worst risk currently on it. */
+    /**
+     * One speedometer card: an asset and the worst risk currently on it.
+     *
+     * <p>The two threat ratings are the {@code t} that produced each level.
+     * They are carried so the card can show WHY the needle sits where it does -
+     * the needle is classify(criticalityRating, worstCurrentThreatRating), and
+     * without the second operand a rating-5 asset showing "Средний" looks like
+     * a bug rather than a low threat.
+     */
     public record AssetGauge(
             Long assetId,
             String code,
@@ -52,7 +60,12 @@ public final class AnalyticsDtos {
             Integer worstCurrentLevel,
             String worstCurrentLabel,
             Integer worstResidualLevel,
-            String worstResidualLabel) {
+            String worstResidualLabel,
+            Integer worstCurrentThreatRating,
+            Integer worstResidualThreatRating,
+            /** Those ratings in words, so the card can read as a sentence. */
+            String worstCurrentThreatLabel,
+            String worstResidualThreatLabel) {
     }
 
     public record LevelCount(int level, String label, long count) {

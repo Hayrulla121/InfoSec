@@ -6,11 +6,17 @@ import { useAuth } from '../auth/AuthContext';
 import { Gauge } from '../components/Gauge';
 import { BarChart, DonutChart, LineChart, type Series } from '../components/Charts';
 import { LevelBadge } from '../components/DataTable';
+import { FormulaHint, type FormulaSpec } from '../components/Formula';
+import {
+  gaugeFormula,
+  implementedPercentFormula,
+  overdueFormula,
+} from '../content/formulas';
 import { useI18n } from '../i18n/I18nContext';
 
 export default function DashboardPage() {
   const { user, isAdmin } = useAuth();
-  const { t, level, criticality, method, status } = useI18n();
+  const { t, level, threat, criticality, method, status } = useI18n();
   const [data, setData] = useState<Dashboard | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -83,12 +89,14 @@ export default function DashboardPage() {
             data.implementedControlLinks,
             data.implementedControlLinks + data.plannedControlLinks,
           )}
+          formula={implementedPercentFormula(t.formula, data)}
         />
         <StatCard
           value={data.overdueMeasures}
           label={t.dashboard.overdue}
           danger={data.overdueMeasures > 0}
           hint={t.dashboard.overdueHint}
+          formula={overdueFormula(t.formula, data, new Date().toLocaleDateString())}
         />
       </section>
 
@@ -104,6 +112,10 @@ export default function DashboardPage() {
                 <div className="gauge-card-head">
                   <strong>{g.code}</strong>
                   <span className="muted"> · {criticality(g.criticality)}</span>
+                  <FormulaHint
+                    spec={gaugeFormula(t.formula, level, threat, criticality, g)}
+                    label={t.formula.ariaLabel(`${g.code} · ${t.formula.gaugeTitle}`)}
+                  />
                 </div>
                 <div className="gauge-card-name" title={g.name}>
                   {g.name}
@@ -167,27 +179,33 @@ export default function DashboardPage() {
         </div>
       </section>
 
-      <section className="panel">
-        <h2>{t.charts.reductionTitle}</h2>
-        <p className="chart-note muted">{t.charts.reductionNote}</p>
-        <LineChart
-          labels={stages}
-          series={reductionSeries}
-          yLabel={t.charts.risksAxis}
-          emptyText={t.charts.noData}
-        />
-      </section>
+      {/* Paired rather than stacked full-width. Each chart only needs enough
+          width to separate its x positions; at full width they were mostly
+          empty plot area, and the four of them pushed the asset gauges and the
+          register links off the first screen. */}
+      <div className="chart-grid-2">
+        <section className="chart-card">
+          <h2>{t.charts.reductionTitle}</h2>
+          <p className="chart-note">{t.charts.reductionNote}</p>
+          <LineChart
+            labels={stages}
+            series={reductionSeries}
+            yLabel={t.charts.risksAxis}
+            emptyText={t.charts.noData}
+          />
+        </section>
 
-      <section className="panel">
-        <h2>{t.charts.timelineTitle}</h2>
-        <p className="chart-note muted">{t.charts.timelineNote}</p>
-        <LineChart
-          labels={data.remediationTimeline.map((p) => monthLabel(p.month))}
-          series={timelineSeries}
-          yLabel={t.charts.measuresAxis}
-          emptyText={t.charts.noDeadlines}
-        />
-      </section>
+        <section className="chart-card">
+          <h2>{t.charts.timelineTitle}</h2>
+          <p className="chart-note">{t.charts.timelineNote}</p>
+          <LineChart
+            labels={data.remediationTimeline.map((p) => monthLabel(p.month))}
+            series={timelineSeries}
+            yLabel={t.charts.measuresAxis}
+            emptyText={t.charts.noDeadlines}
+          />
+        </section>
+      </div>
 
       <div className="chart-grid-2">
         <section className="chart-card">
@@ -227,17 +245,29 @@ function StatCard({
   hint,
   to,
   danger,
+  formula,
 }: {
   value: number | string;
   label: string;
   hint?: string;
   to?: string;
   danger?: boolean;
+  /** Present only on the two derived counters; the four totals are just counts. */
+  formula?: FormulaSpec;
 }) {
+  const { t } = useI18n();
   const body = (
     <>
       <div className={danger ? 'stat-value stat-danger' : 'stat-value'}>{value}</div>
-      <div className="stat-label">{label}</div>
+      <div className="stat-label">
+        {label}
+        {/* Inside the label, not next to the number: the counters that carry a
+            hint are also the ones with the longest labels, and a trigger beside
+            a 2.6rem numeral would sit alone in a lot of white space. */}
+        {formula && (
+          <FormulaHint spec={formula} label={t.formula.ariaLabel(label)} />
+        )}
+      </div>
       {hint && <div className="stat-hint muted">{hint}</div>}
     </>
   );
