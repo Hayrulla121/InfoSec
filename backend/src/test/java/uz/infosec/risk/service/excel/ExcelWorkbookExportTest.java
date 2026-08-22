@@ -22,6 +22,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.io.ByteArrayInputStream;
 import java.util.List;
 
+import static uz.infosec.risk.TestCredentials.ADMIN_PASSWORD;
+import static uz.infosec.risk.TestCredentials.ADMIN_USERNAME;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -54,7 +56,7 @@ class ExcelWorkbookExportTest {
 
     @BeforeEach
     void setUp() throws Exception {
-        admin = login("admin", "admin");
+        admin = login(ADMIN_USERNAME, ADMIN_PASSWORD);
     }
 
     private String login(String u, String p) throws Exception {

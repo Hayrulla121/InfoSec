@@ -71,7 +71,7 @@ export default function DashboardPage() {
   return (
     <div>
       <div className="page-header">
-        <h1>{t.dashboard.title}</h1>
+        <h1 className="dashboard-title">{t.dashboard.title}</h1>
         <span className="muted">
           {user?.fullName} · {isAdmin ? t.role.admin : t.role.user}
         </span>

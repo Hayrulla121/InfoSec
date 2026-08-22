@@ -14,6 +14,8 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
+import static uz.infosec.risk.TestCredentials.ADMIN_PASSWORD;
+import static uz.infosec.risk.TestCredentials.ADMIN_USERNAME;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -55,7 +57,8 @@ class DemoDataAndLocaleTest {
         String body = mvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"username":"admin","password":"admin"}"""))
+                                {"username":"%s","password":"%s"}"""
+                                .formatted(ADMIN_USERNAME, ADMIN_PASSWORD)))
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
         return json.readTree(body).get("token").asText();

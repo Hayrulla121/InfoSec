@@ -105,7 +105,9 @@ export const ru = {
   },
 
   dashboard: {
-    title: 'Главная',
+    // The page heading, not the sidebar link — `nav.home` stays "Главная" so
+    // the menu item remains short and scannable.
+    title: 'Состояние информационных активов Центрального банка Республики Узбекистан',
     risks: 'Рисков',
     assets: 'Ключевых ИА',
     threats: 'Угроз',

@@ -108,8 +108,14 @@ cd frontend && npm run dev
 cd backend && JAVA_HOME=/opt/homebrew/opt/openjdk@21 ./mvnw test
 ```
 
-Dev login: **`admin` / `admin`**. H2 SQL console at http://localhost:8080/h2-console
-(JDBC URL `jdbc:h2:file:./data/riskdb`, user `sa`, blank password).
+Dev login: **`admin`** / **`p@MZ7!q7vfYMGH478^B#`**. H2 SQL console at
+http://localhost:8080/h2-console (JDBC URL `jdbc:h2:file:./data/riskdb`, user
+`sa`, blank password).
+
+> The seeded password is set by `V6__admin_password.sql`. It is a *development*
+> default: it ships in this repository, so anyone who can read the code can read
+> the password. Change it from **Пользователи / Foydalanuvchilar** in the
+> interface before the system holds real data.
 
 ## Screens
 
@@ -168,7 +174,15 @@ always inside the same transaction, so no reader ever sees stale numbers.
 
 **Production checklist:** override the signing key via environment variable —
 `export APP_JWT_SECRET=$(openssl rand -base64 48)`. The value in
-`application.yml` is a dev default only. Also change the `admin` password.
+`application.yml` is a dev default only.
+
+Change the `admin` password too. The seeded one is long and random rather than
+the word `admin`, which stops opportunistic guessing, but it is committed to
+this repository and therefore is not a secret. Set a real one through the
+Пользователи screen, which re-hashes with the same BCrypt encoder. If you would
+rather rotate it in the database, generate a hash with
+`htpasswd -bnBC 10 "" 'new-password'` and update `users.password_hash` — never
+by editing a migration that has already run.
 
 ## Improvements over the workbook
 

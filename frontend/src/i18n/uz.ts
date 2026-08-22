@@ -96,7 +96,7 @@ export const uz: Dictionary = {
   },
 
   dashboard: {
-    title: 'Bosh sahifa',
+    title: "O'ZBEKISTON RESPUBLIKASI MARKAZIY BANKI AXBOROT AKTIVLARI HOLATI",
     risks: 'Xavflar',
     assets: 'Asosiy aktivlar',
     threats: 'Tahdidlar',

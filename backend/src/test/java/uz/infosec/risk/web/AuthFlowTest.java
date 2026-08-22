@@ -10,6 +10,8 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
+import static uz.infosec.risk.TestCredentials.ADMIN_PASSWORD;
+import static uz.infosec.risk.TestCredentials.ADMIN_USERNAME;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -47,7 +49,8 @@ class AuthFlowTest {
         String body = mvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"username":"admin","password":"admin"}"""))
+                                {"username":"%s","password":"%s"}"""
+                                .formatted(ADMIN_USERNAME, ADMIN_PASSWORD)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.user.username").value("admin"))
                 .andExpect(jsonPath("$.user.role").value("ADMIN"))
@@ -90,7 +93,7 @@ class AuthFlowTest {
 
     @Test
     void meReturnsCurrentUserFromToken() throws Exception {
-        String token = login("admin", "admin");
+        String token = login(ADMIN_USERNAME, ADMIN_PASSWORD);
 
         mvc.perform(get("/api/auth/me").header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
@@ -99,7 +102,7 @@ class AuthFlowTest {
 
     @Test
     void newUserDefaultsToReadOnlyEverywhere() throws Exception {
-        String adminToken = login("admin", "admin");
+        String adminToken = login(ADMIN_USERNAME, ADMIN_PASSWORD);
 
         String created = mvc.perform(post("/api/admin/users")
                         .header("Authorization", "Bearer " + adminToken)
@@ -130,7 +133,7 @@ class AuthFlowTest {
 
     @Test
     void nonAdminCannotReachAdminEndpoints() throws Exception {
-        String adminToken = login("admin", "admin");
+        String adminToken = login(ADMIN_USERNAME, ADMIN_PASSWORD);
         mvc.perform(post("/api/admin/users")
                         .header("Authorization", "Bearer " + adminToken)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -147,7 +150,7 @@ class AuthFlowTest {
 
     @Test
     void deactivatedUserCannotLogInAndExistingTokenStopsWorking() throws Exception {
-        String adminToken = login("admin", "admin");
+        String adminToken = login(ADMIN_USERNAME, ADMIN_PASSWORD);
 
         String created = mvc.perform(post("/api/admin/users")
                         .header("Authorization", "Bearer " + adminToken)
@@ -186,7 +189,7 @@ class AuthFlowTest {
 
     @Test
     void validationFailureReturnsFieldErrors() throws Exception {
-        String adminToken = login("admin", "admin");
+        String adminToken = login(ADMIN_USERNAME, ADMIN_PASSWORD);
 
         mvc.perform(post("/api/admin/users")
                         .header("Authorization", "Bearer " + adminToken)
@@ -200,7 +203,7 @@ class AuthFlowTest {
 
     @Test
     void lastActiveAdminCannotBeDeactivated() throws Exception {
-        String adminToken = login("admin", "admin");
+        String adminToken = login(ADMIN_USERNAME, ADMIN_PASSWORD);
 
         String body = mvc.perform(get("/api/admin/users")
                         .header("Authorization", "Bearer " + adminToken))

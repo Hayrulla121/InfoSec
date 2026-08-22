@@ -1140,6 +1140,24 @@ code {
    Page furniture
    ========================================================================== */
 
+/*
+ * The dashboard heading is the institution's name, not a page label.
+ *
+ * The global h1 is 2rem/800/uppercase, which was sized for "ГЛАВНАЯ" — seven
+ * characters. At seventy-six it becomes a wall of capitals that pushes the
+ * counters and the gauges below the fold. This scales with the viewport
+ * instead: restrained on a laptop, still commanding on a wide monitor.
+ */
+.dashboard-title {
+  font-size: clamp(1.15rem, 1.1vw + 0.75rem, 1.55rem);
+  line-height: 1.12;
+  /* Looser than the global -0.028em: that tracking is for display sizes, and
+     at this size it crowds uppercase Cyrillic. */
+  letter-spacing: -0.015em;
+  /* Evens the lines instead of leaving one word stranded on the last. */
+  text-wrap: balance;
+}
+
 .page-header {
   display: flex;
   align-items: flex-end;

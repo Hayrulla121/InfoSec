@@ -12,6 +12,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import uz.infosec.risk.domain.DictType;
 import uz.infosec.risk.service.DictionaryService;
 
+import static uz.infosec.risk.TestCredentials.ADMIN_PASSWORD;
+import static uz.infosec.risk.TestCredentials.ADMIN_USERNAME;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -42,7 +44,7 @@ class DictionaryTest {
 
     @Test
     void seedMatchesTheExcelTechnicalSheet() throws Exception {
-        String token = login("admin", "admin");
+        String token = login(ADMIN_USERNAME, ADMIN_PASSWORD);
 
         String body = mvc.perform(get("/api/dictionaries").header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
@@ -72,7 +74,7 @@ class DictionaryTest {
 
     @Test
     void treatmentMethodsMatchTheWorkbook() throws Exception {
-        String token = login("admin", "admin");
+        String token = login(ADMIN_USERNAME, ADMIN_PASSWORD);
         String body = mvc.perform(get("/api/dictionaries").header("Authorization", "Bearer " + token))
                 .andReturn().getResponse().getContentAsString();
 
@@ -92,7 +94,7 @@ class DictionaryTest {
 
     @Test
     void adminCanAddAStatusAndItComesBackOrdered() throws Exception {
-        String token = login("admin", "admin");
+        String token = login(ADMIN_USERNAME, ADMIN_PASSWORD);
 
         String body = mvc.perform(put("/api/dictionaries")
                         .header("Authorization", "Bearer " + token)
@@ -116,7 +118,7 @@ class DictionaryTest {
 
     @Test
     void duplicateLevelIsRejected() throws Exception {
-        String token = login("admin", "admin");
+        String token = login(ADMIN_USERNAME, ADMIN_PASSWORD);
 
         mvc.perform(put("/api/dictionaries")
                         .header("Authorization", "Bearer " + token)
@@ -131,7 +133,7 @@ class DictionaryTest {
 
     @Test
     void criticalityWithoutLevelIsRejected() throws Exception {
-        String token = login("admin", "admin");
+        String token = login(ADMIN_USERNAME, ADMIN_PASSWORD);
 
         mvc.perform(put("/api/dictionaries")
                         .header("Authorization", "Bearer " + token)
@@ -145,7 +147,7 @@ class DictionaryTest {
 
     @Test
     void emptyingADictionaryIsRejected() throws Exception {
-        String token = login("admin", "admin");
+        String token = login(ADMIN_USERNAME, ADMIN_PASSWORD);
 
         mvc.perform(put("/api/dictionaries")
                         .header("Authorization", "Bearer " + token)
@@ -157,7 +159,7 @@ class DictionaryTest {
 
     @Test
     void userWithoutUpdateGrantCannotEditDictionaries() throws Exception {
-        String adminToken = login("admin", "admin");
+        String adminToken = login(ADMIN_USERNAME, ADMIN_PASSWORD);
 
         mvc.perform(post("/api/admin/users")
                         .header("Authorization", "Bearer " + adminToken)

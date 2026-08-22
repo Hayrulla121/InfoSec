@@ -16,6 +16,8 @@ import org.springframework.web.bind.annotation.*;
 import uz.infosec.risk.domain.Action;
 import uz.infosec.risk.domain.AppModule;
 
+import static uz.infosec.risk.TestCredentials.ADMIN_PASSWORD;
+import static uz.infosec.risk.TestCredentials.ADMIN_USERNAME;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -73,7 +75,7 @@ class ModulePermissionAspectTest {
 
     @BeforeEach
     void setUp() throws Exception {
-        adminToken = login("admin", "admin");
+        adminToken = login(ADMIN_USERNAME, ADMIN_PASSWORD);
     }
 
     private String login(String username, String password) throws Exception {
